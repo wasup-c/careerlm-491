@@ -1,0 +1,51 @@
+name: Assign Pull Request Reviewer
+
+on:
+  pull_request_target:
+    types:
+      - opened
+      - reopened
+      - ready_for_review
+
+permissions:
+  pull-requests: write
+
+jobs:
+  assign-reviewer:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Request assigned reviewer
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const author = context.payload.pull_request.user.login;
+
+            const reviewerMap = {
+              "wasup-c": "jasev24",
+              "SeatedGamer": "wasup-c",
+              "adriancancode": "SeatedGamer",
+              "david15tran": "adriancancode",
+              "jasev24": "david15tran"
+            };
+
+            const reviewer = reviewerMap[author];
+
+            if (!reviewer) {
+              core.notice(`No reviewer configured for ${author}`);
+              return;
+            }
+
+            if (author === reviewer) {
+              core.setFailed(`PR author ${author} cannot review their own pull request.`);
+              return;
+            }
+
+            await github.rest.pulls.requestReviewers({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+              reviewers: [reviewer]
+            });
+
+            core.notice(`Requested review from ${reviewer} for PR opened by ${author}`);
