@@ -3,13 +3,9 @@ export type MilestoneStatus =
   | "in-progress"
   | "completed";
 
-export interface QuestionnaireResponse {
-  targetCareerRole: string;
-  experienceLevel: string;
-  existingSkills: string[];
-  preferredLearningStyle: string;
-  weeklyTimeCommitment: number;
-}
+export type AnswerValue = string | string[];
+
+export type OnboardingAnswers = Record<number, AnswerValue>;
 
 export interface RoadmapMilestone {
   id: string;
@@ -24,6 +20,6 @@ export interface RoadmapMilestone {
 export interface CareerRoadmap {
   id: string;
   targetRole: string;
-  progressPercentage?: number;
+  progressPercentage: number;
   milestones: RoadmapMilestone[];
 }
