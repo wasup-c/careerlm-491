@@ -1,93 +1,27 @@
-"use client";
-
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-
 import MilestoneCard from "@/components/MilestoneCard";
-import type { CareerRoadmap } from "@/types/career";
+import { mockRoadmap } from "@/data/mockRoadmap";
 
-type RoadmapState = CareerRoadmap | null | undefined;
+function calculateProgress(): number {
+  if (mockRoadmap.milestones.length === 0) {
+    return 0;
+  }
+
+  const completedMilestones =
+    mockRoadmap.milestones.filter(
+      (milestone) =>
+        milestone.status === "completed"
+    ).length;
+
+  return Math.round(
+    (completedMilestones /
+      mockRoadmap.milestones.length) *
+      100
+  );
+}
 
 export default function RoadmapPage() {
-  const router = useRouter();
-
-  // undefined = still loading
-  // null = no roadmap was found
-  // CareerRoadmap = roadmap successfully loaded
-  const [roadmap, setRoadmap] =
-    useState<RoadmapState>(undefined);
-
-  useEffect(() => {
-    const frameId = requestAnimationFrame(() => {
-      const storedRoadmap = sessionStorage.getItem(
-        "careerlm-roadmap"
-      );
-
-      if (!storedRoadmap) {
-        setRoadmap(null);
-        return;
-      }
-
-      try {
-        const parsedRoadmap: CareerRoadmap =
-          JSON.parse(storedRoadmap);
-
-        setRoadmap(parsedRoadmap);
-      } catch (error) {
-        console.error(
-          "Unable to load roadmap:",
-          error
-        );
-
-        setRoadmap(null);
-      }
-    });
-
-    return () => cancelAnimationFrame(frameId);
-  }, []);
-
-  // Still loading the roadmap from sessionStorage.
-  if (roadmap === undefined) {
-    return (
-      <main className="min-h-screen bg-teal-50 px-4 py-10">
-        <div className="mx-auto max-w-4xl">
-          <p className="text-slate-600">
-            Loading your roadmap...
-          </p>
-        </div>
-      </main>
-    );
-  }
-
-  // No roadmap exists in sessionStorage.
-  if (roadmap === null) {
-    return (
-      <main className="min-h-screen bg-teal-50 px-4 py-10">
-        <section className="mx-auto max-w-4xl">
-          <div className="rounded-xl border border-slate-200 bg-white p-8 text-center shadow-sm">
-            <h1 className="text-2xl font-bold text-slate-900">
-              No Roadmap Available
-            </h1>
-
-            <p className="mt-3 text-slate-600">
-              Complete the CareerLM onboarding questionnaire
-              to generate your career roadmap.
-            </p>
-
-            <button
-              type="button"
-              onClick={() =>
-                router.push("/onboarding")
-              }
-              className="mt-6 rounded-md bg-teal-700 px-5 py-3 font-semibold text-white transition hover:bg-teal-800"
-            >
-              Start Onboarding
-            </button>
-          </div>
-        </section>
-      </main>
-    );
-  }
+  const progressPercentage =
+    calculateProgress();
 
   return (
     <main className="min-h-screen bg-teal-50 px-4 py-10">
@@ -98,59 +32,80 @@ export default function RoadmapPage() {
           </p>
 
           <h1 className="mt-2 text-3xl font-bold text-slate-900 sm:text-4xl">
-            Your Career Roadmap
+            {mockRoadmap.title}
           </h1>
 
           <p className="mt-4 text-lg text-slate-700">
             Target Career:{" "}
             <span className="font-semibold">
-              {roadmap.targetRole}
+              {mockRoadmap.targetRole}
+            </span>
+          </p>
+
+          <p className="mt-2 text-slate-600">
+            Estimated completion time:{" "}
+            <span className="font-medium">
+              {mockRoadmap.estimatedWeeks} weeks
             </span>
           </p>
 
           <div className="mt-6">
-            <div className="mb-2 flex justify-between">
+            <div className="mb-2 flex justify-between gap-4">
               <span className="font-medium text-slate-700">
                 Overall Progress
               </span>
 
               <span className="font-semibold text-teal-700">
-                {roadmap.progressPercentage}%
+                {progressPercentage}%
               </span>
             </div>
 
-            <div className="h-3 overflow-hidden rounded-full bg-slate-200">
+            <div
+              className="h-3 overflow-hidden rounded-full bg-slate-200"
+              role="progressbar"
+              aria-label="Roadmap progress"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={
+                progressPercentage
+              }
+            >
               <div
                 className="h-full bg-teal-700 transition-all"
                 style={{
-                  width: `${roadmap.progressPercentage}%`,
+                  width: `${progressPercentage}%`,
                 }}
               />
             </div>
           </div>
         </header>
 
-        <section>
-          <h2 className="mb-6 text-2xl font-semibold text-slate-900">
+        <section aria-labelledby="milestones-heading">
+          <h2
+            id="milestones-heading"
+            className="mb-6 text-2xl font-semibold text-slate-900"
+          >
             Career Milestones
           </h2>
 
           <div className="space-y-6">
-            {roadmap.milestones.map(
-              (milestone, index) => (
-                <div key={milestone.id}>
-                  <p className="mb-2 text-sm font-semibold text-teal-700">
-                    Milestone {index + 1}
-                  </p>
-
-                  <MilestoneCard
-                    milestone={milestone}
-                  />
-                </div>
+            {mockRoadmap.milestones
+              .toSorted(
+                (a, b) => a.order - b.order
               )
-            )}
+              .map((milestone) => (
+                <MilestoneCard
+                  key={milestone.id}
+                  milestone={milestone}
+                />
+              ))}
           </div>
         </section>
+
+        <p className="mt-8 text-center text-sm text-slate-500">
+          Sprint 1 demonstration using mock
+          CareerLM roadmap data.
+        </p>
       </section>
     </main>
   );
