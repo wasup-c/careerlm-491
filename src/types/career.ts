@@ -1,15 +1,17 @@
-export type MilestoneStatus =
-  | "not-started"
-  | "in-progress"
-  | "completed";
+export type WeeklyTimeCommitment =
+  | "Less than 5 hours"
+  | "5-10 hours"
+  | "10-20 hours"
+  | "More than 20 hours";
 
-/**
- * Shared representation of the answers collected by the
- * CareerLM onboarding questionnaire.
- *
- * Sprint 1 establishes the contract only.
- * The onboarding UI can populate this structure later.
- */
+export interface QuestionnaireResponse {
+  targetCareerRole: string;
+  experienceLevel: string;
+  targetTimeline: string;
+  preferredLearningStyle: string;
+  weeklyTimeCommitment: WeeklyTimeCommitment;
+}
+
 export interface QuestionnaireResponses {
   targetRole: string;
   experienceLevel: string;
@@ -18,32 +20,50 @@ export interface QuestionnaireResponses {
   weeklyHours: number;
 }
 
-/**
- * Alias matching the terminology used in the project specification.
- */
 export type QuestionnaireInput = QuestionnaireResponses;
 
-/**
- * A single ordered step in a CareerLM roadmap.
- */
+export type MilestoneStatus =
+  | "not-started"
+  | "in-progress"
+  | "completed";
+
 export interface RoadmapMilestone {
   id: string;
   order: number;
   title: string;
   description: string;
-  estimatedHours: number;
   skills: string[];
+  estimatedTime: string;
+  estimatedHours?: number;
   status: MilestoneStatus;
   additionalInfo?: string;
 }
 
-/**
- * Shared representation of a generated CareerLM roadmap.
- */
 export interface CareerRoadmap {
   id: string;
-  title: string;
+  title?: string;
   targetRole: string;
-  estimatedWeeks: number;
+  estimatedWeeks?: number;
+  progressPercentage?: number;
   milestones: RoadmapMilestone[];
 }
+
+export type GenerateRoadmapErrorCode =
+  | "VALIDATION_ERROR"
+  | "GENERATION_FAILED"
+  | "PERSISTENCE_FAILED"
+  | "INTERNAL_ERROR";
+
+export type GenerateRoadmapResponse =
+  | {
+      success: true;
+      roadmap: CareerRoadmap;
+    }
+  | {
+      success: false;
+      error: {
+        code: GenerateRoadmapErrorCode;
+        message: string;
+        fieldErrors?: Record<string, string>;
+      };
+    };
