@@ -1,51 +1,33 @@
-import type {
-  CareerRoadmap,
-  QuestionnaireResponses,
-} from "@/types/career";
+import type { Roadmap } from "@/types/career";
 
-export const mockQuestionnaireResponses: QuestionnaireResponses = {
-  targetRole: "Software Engineer",
-  experienceLevel: "Beginner",
-  existingSkills: [
-    "HTML",
-    "CSS",
-    "JavaScript",
-  ],
-  learningStyle: "Project-based learning",
-  weeklyHours: 10,
-};
-
-export const mockRoadmap: CareerRoadmap = {
-  id: "roadmap-software-engineer-demo",
+export const mockRoadmap: Roadmap = {
+  id: "software-engineer-roadmap",
   title: "Software Engineer Career Roadmap",
   targetRole: "Software Engineer",
-  estimatedWeeks: 12,
-
+  estimatedWeeks: 16,
   milestones: [
     {
       id: "programming-foundations",
       order: 1,
-      title: "Strengthen Programming Foundations",
+      title: "Build Programming Foundations",
       description:
-        "Build a strong foundation in programming concepts needed for software engineering.",
-      estimatedHours: 20,
+        "Strengthen core programming concepts, problem solving, and version-control habits before moving into larger projects.",
+      estimatedHours: 30,
       skills: [
-        "JavaScript",
         "TypeScript",
         "Problem Solving",
+        "Git",
+        "GitHub",
       ],
       status: "completed",
-      additionalInfo:
-        "Focus on variables, functions, arrays, objects, control flow, and basic algorithms.",
     },
-
     {
-      id: "frontend-development",
+      id: "web-development",
       order: 2,
-      title: "Build Frontend Development Skills",
+      title: "Develop Modern Web Skills",
       description:
-        "Practice building responsive and maintainable web interfaces using modern frontend tools.",
-      estimatedHours: 30,
+        "Practice building typed, component-based web interfaces and connecting application behavior to reusable data models.",
+      estimatedHours: 45,
       skills: [
         "React",
         "Next.js",
@@ -53,27 +35,21 @@ export const mockRoadmap: CareerRoadmap = {
         "Tailwind CSS",
       ],
       status: "in-progress",
-      additionalInfo:
-        "Create small projects that demonstrate reusable components and application routing.",
     },
-
     {
       id: "portfolio-project",
       order: 3,
       title: "Complete a Portfolio Project",
       description:
-        "Create a complete software project that demonstrates your technical and problem-solving skills.",
-      estimatedHours: 40,
+        "Build and document a complete project that demonstrates planning, implementation, testing, and collaboration skills.",
+      estimatedHours: 50,
       skills: [
         "Project Planning",
-        "Git",
-        "GitHub",
         "Testing",
         "Documentation",
+        "Teamwork",
       ],
       status: "not-started",
-      additionalInfo:
-        "Document the project and explain the technical decisions and skills demonstrated.",
     },
   ],
 };
