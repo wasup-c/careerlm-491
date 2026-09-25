@@ -8,7 +8,11 @@ export default function NotFound() {
       </h1>
 
       <p className="mt-4 text-gray-600">
+<<<<<<< HEAD
         The page you're looking for doesn't exist or may have moved.
+=======
+        We couldn&apos;t find what you&apos;re looking for.
+>>>>>>> 22c3181449c5ed915be6454f6f1212059d3306cc
       </p>
 
       <Link
