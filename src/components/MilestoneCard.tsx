@@ -1,14 +1,11 @@
-import type {
-  MilestoneStatus,
-  RoadmapMilestone,
-} from "@/types/career";
+import type { Milestone } from "@/types/career";
 
 interface MilestoneCardProps {
-  milestone: RoadmapMilestone;
+  milestone: Milestone;
 }
 
 function formatStatus(
-  status: MilestoneStatus
+  status: Milestone["status"]
 ): string {
   switch (status) {
     case "completed":
@@ -22,21 +19,6 @@ function formatStatus(
   }
 }
 
-function getStatusClasses(
-  status: MilestoneStatus
-): string {
-  switch (status) {
-    case "completed":
-      return "bg-green-100 text-green-800";
-
-    case "in-progress":
-      return "bg-amber-100 text-amber-800";
-
-    case "not-started":
-      return "bg-slate-100 text-slate-700";
-  }
-}
-
 export default function MilestoneCard({
   milestone,
 }: MilestoneCardProps) {
@@ -44,7 +26,7 @@ export default function MilestoneCard({
     <article className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-wide text-teal-700">
+          <p className="text-sm font-semibold text-teal-700">
             Milestone {milestone.order}
           </p>
 
@@ -53,11 +35,7 @@ export default function MilestoneCard({
           </h2>
         </div>
 
-        <span
-          className={`w-fit rounded-full px-3 py-1 text-sm font-medium ${getStatusClasses(
-            milestone.status
-          )}`}
-        >
+        <span className="w-fit rounded-full bg-slate-100 px-3 py-1 text-sm font-medium text-slate-700">
           {formatStatus(milestone.status)}
         </span>
       </div>
@@ -83,20 +61,12 @@ export default function MilestoneCard({
         </ul>
       </div>
 
-      <div className="mt-5 space-y-2 text-slate-700">
-        <p>
-          <span className="font-semibold">
-            Estimated effort:
-          </span>{" "}
-          {milestone.estimatedHours} hours
-        </p>
-
-        {milestone.additionalInfo && (
-          <p className="text-sm text-slate-600">
-            {milestone.additionalInfo}
-          </p>
-        )}
-      </div>
+      <p className="mt-5 text-slate-700">
+        <span className="font-semibold">
+          Estimated effort:
+        </span>{" "}
+        {milestone.estimatedHours} hours
+      </p>
     </article>
   );
 }
