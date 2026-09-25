@@ -8,7 +8,7 @@ export default function NotFound() {
       </h1>
 
       <p className="mt-4 text-gray-600">
-        We couldn&apos;t find what you&apos;re looking for.
+        The page you're looking for doesn't exist or may have moved.
       </p>
 
       <Link
