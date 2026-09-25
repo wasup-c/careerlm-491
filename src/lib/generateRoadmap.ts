@@ -1,87 +1,102 @@
 import type {
   CareerRoadmap,
-  OnboardingAnswers,
+  QuestionnaireResponses,
 } from "@/types/career";
 
-function findFirstTextAnswer(
-  answers: OnboardingAnswers
-): string | undefined {
-  return Object.values(answers).find(
-    (answer): answer is string =>
-      typeof answer === "string" &&
-      answer.trim().length > 0
-  );
+function createRoadmapId(targetRole: string): string {
+  const slug = targetRole
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+
+  return `roadmap-${slug || "career-goal"}`;
 }
 
-function findFirstListAnswer(
-  answers: OnboardingAnswers
-): string[] {
-  const answer = Object.values(answers).find(
-    (value): value is string[] =>
-      Array.isArray(value) && value.length > 0
-  );
-
-  return answer ?? [];
-}
-
+/**
+ * Creates a deterministic roadmap from questionnaire responses.
+ *
+ * Sprint 1 uses local deterministic behavior.
+ * A later sprint can replace this implementation with an AI-backed
+ * roadmap-generation service while preserving the same shared types.
+ */
 export function generateRoadmap(
-  answers: OnboardingAnswers
+  responses: QuestionnaireResponses
 ): CareerRoadmap {
   const targetRole =
-    findFirstTextAnswer(answers) ?? "Career Goal";
+    responses.targetRole.trim() || "Career Goal";
 
-  const selectedSkills = findFirstListAnswer(answers);
+  const weeklyHours = Math.max(
+    responses.weeklyHours,
+    1
+  );
+
+  const milestones = [
+    {
+      id: "career-foundations",
+      order: 1,
+      title: `Build Foundations for ${targetRole}`,
+      description:
+        `Develop the fundamental knowledge needed to begin progressing toward a career as a ${targetRole}.`,
+      estimatedHours: 20,
+      skills:
+        responses.existingSkills.length > 0
+          ? responses.existingSkills
+          : [
+              "Core Fundamentals",
+              "Problem Solving",
+            ],
+      status: "not-started" as const,
+    },
+
+    {
+      id: "practical-skills",
+      order: 2,
+      title: "Develop Practical Skills",
+      description:
+        `Apply foundational knowledge through hands-on work related to ${targetRole}.`,
+      estimatedHours: 30,
+      skills: [
+        "Practical Experience",
+        "Project Development",
+        "Problem Solving",
+      ],
+      status: "not-started" as const,
+    },
+
+    {
+      id: "portfolio-project",
+      order: 3,
+      title: `Complete a ${targetRole} Portfolio Project`,
+      description:
+        "Create a complete project that demonstrates your developing skills and can be shown to employers.",
+      estimatedHours: 40,
+      skills: [
+        "Project Planning",
+        "Implementation",
+        "Documentation",
+        "Git",
+        "GitHub",
+      ],
+      status: "not-started" as const,
+      additionalInfo:
+        "Document the project and explain the skills demonstrated by your work.",
+    },
+  ];
+
+  const totalHours = milestones.reduce(
+    (sum, milestone) =>
+      sum + milestone.estimatedHours,
+    0
+  );
 
   return {
-    id: `roadmap-${Date.now()}`,
+    id: createRoadmapId(targetRole),
+    title: `${targetRole} Career Roadmap`,
     targetRole,
-    progressPercentage: 0,
-
-    milestones: [
-      {
-        id: "foundation",
-        title: `Build Foundations for ${targetRole}`,
-        description:
-          `Develop the fundamental knowledge required to begin progressing toward a career as a ${targetRole}.`,
-        skills:
-          selectedSkills.length > 0
-            ? selectedSkills
-            : ["Core Fundamentals", "Problem Solving"],
-        estimatedTime: "2-4 weeks",
-        status: "not-started",
-      },
-
-      {
-        id: "practical-skills",
-        title: "Develop Practical Skills",
-        description:
-          `Apply foundational knowledge through hands-on work related to ${targetRole}.`,
-        skills: [
-          "Practical Experience",
-          "Project Development",
-          "Problem Solving",
-        ],
-        estimatedTime: "4-6 weeks",
-        status: "not-started",
-      },
-
-      {
-        id: "career-project",
-        title: `Complete a ${targetRole} Portfolio Project`,
-        description:
-          "Create a complete project that demonstrates your developing skills and can be shown to employers.",
-        skills: [
-          "Project Planning",
-          "Implementation",
-          "Documentation",
-          "Git",
-          "GitHub",
-        ],
-        estimatedTime: "6-8 weeks",
-        status: "not-started",
-        additionalInfo:
-          "Document the project and explain the skills demonstrated by your work.",
-      },
-    ],
+    estimatedWeeks: Math.ceil(
+      totalHours / weeklyHours
+    ),
+    milestones,
   };
 }
