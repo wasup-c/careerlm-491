@@ -1,10 +1,15 @@
-import type { RoadmapMilestone } from "@/types/career";
+import type {
+  MilestoneStatus,
+  RoadmapMilestone,
+} from "@/types/career";
 
 interface MilestoneCardProps {
   milestone: RoadmapMilestone;
 }
 
-function formatStatus(status: RoadmapMilestone["status"]) {
+function formatStatus(
+  status: MilestoneStatus
+): string {
   switch (status) {
     case "completed":
       return "Completed";
@@ -12,8 +17,23 @@ function formatStatus(status: RoadmapMilestone["status"]) {
     case "in-progress":
       return "In Progress";
 
-    default:
+    case "not-started":
       return "Not Started";
+  }
+}
+
+function getStatusClasses(
+  status: MilestoneStatus
+): string {
+  switch (status) {
+    case "completed":
+      return "bg-green-100 text-green-800";
+
+    case "in-progress":
+      return "bg-amber-100 text-amber-800";
+
+    case "not-started":
+      return "bg-slate-100 text-slate-700";
   }
 }
 
@@ -22,17 +42,31 @@ export default function MilestoneCard({
 }: MilestoneCardProps) {
   return (
     <article className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-      <div className="mb-4">
-        <h2 className="text-xl font-semibold text-slate-900">
-          {milestone.title}
-        </h2>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <p className="text-sm font-semibold uppercase tracking-wide text-teal-700">
+            Milestone {milestone.order}
+          </p>
 
-        <p className="mt-2 text-slate-600">
-          {milestone.description}
-        </p>
+          <h2 className="mt-1 text-xl font-semibold text-slate-900">
+            {milestone.title}
+          </h2>
+        </div>
+
+        <span
+          className={`w-fit rounded-full px-3 py-1 text-sm font-medium ${getStatusClasses(
+            milestone.status
+          )}`}
+        >
+          {formatStatus(milestone.status)}
+        </span>
       </div>
 
-      <div className="mb-4">
+      <p className="mt-4 text-slate-600">
+        {milestone.description}
+      </p>
+
+      <div className="mt-5">
         <h3 className="font-semibold text-slate-900">
           Skills
         </h3>
@@ -49,19 +83,12 @@ export default function MilestoneCard({
         </ul>
       </div>
 
-      <div className="space-y-2 text-slate-700">
+      <div className="mt-5 space-y-2 text-slate-700">
         <p>
           <span className="font-semibold">
-            Estimated Time:
+            Estimated effort:
           </span>{" "}
-          {milestone.estimatedTime}
-        </p>
-
-        <p>
-          <span className="font-semibold">
-            Status:
-          </span>{" "}
-          {formatStatus(milestone.status)}
+          {milestone.estimatedHours} hours
         </p>
 
         {milestone.additionalInfo && (
