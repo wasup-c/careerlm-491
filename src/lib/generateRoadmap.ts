@@ -1,54 +1,42 @@
 import type {
-  CareerRoadmap,
-  QuestionnaireResponses,
+  Milestone,
+  QuestionnaireInput,
+  Roadmap,
 } from "@/types/career";
 
-function createRoadmapId(targetRole: string): string {
-  const slug = targetRole
+function slugify(value: string): string {
+  return value
     .trim()
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
-
-  return `roadmap-${slug || "career-goal"}`;
 }
 
-/**
- * Creates a deterministic roadmap from questionnaire responses.
- *
- * Sprint 1 uses local deterministic behavior.
- * A later sprint can replace this implementation with an AI-backed
- * roadmap-generation service while preserving the same shared types.
- */
 export function generateRoadmap(
-  responses: QuestionnaireResponses
-): CareerRoadmap {
+  answers: QuestionnaireInput
+): Roadmap {
   const targetRole =
-    responses.targetRole.trim() || "Career Goal";
+    answers.targetRole.trim() || "Career Goal";
 
-  const weeklyHours = Math.max(
-    responses.weeklyHours,
-    1
-  );
+  const foundationSkills =
+    answers.existingSkills.length > 0
+      ? answers.existingSkills
+      : [
+          "Core Fundamentals",
+          "Problem Solving",
+        ];
 
-  const milestones = [
+  const milestones: Milestone[] = [
     {
-      id: "career-foundations",
+      id: "foundation",
       order: 1,
       title: `Build Foundations for ${targetRole}`,
       description:
         `Develop the fundamental knowledge needed to begin progressing toward a career as a ${targetRole}.`,
       estimatedHours: 20,
-      skills:
-        responses.existingSkills.length > 0
-          ? responses.existingSkills
-          : [
-              "Core Fundamentals",
-              "Problem Solving",
-            ],
-      status: "not-started" as const,
+      skills: foundationSkills,
+      status: "not-started",
     },
-
     {
       id: "practical-skills",
       order: 2,
@@ -61,15 +49,14 @@ export function generateRoadmap(
         "Project Development",
         "Problem Solving",
       ],
-      status: "not-started" as const,
+      status: "not-started",
     },
-
     {
-      id: "portfolio-project",
+      id: "career-project",
       order: 3,
       title: `Complete a ${targetRole} Portfolio Project`,
       description:
-        "Create a complete project that demonstrates your developing skills and can be shown to employers.",
+        "Create and document a complete project that demonstrates your developing skills to employers.",
       estimatedHours: 40,
       skills: [
         "Project Planning",
@@ -78,9 +65,7 @@ export function generateRoadmap(
         "Git",
         "GitHub",
       ],
-      status: "not-started" as const,
-      additionalInfo:
-        "Document the project and explain the skills demonstrated by your work.",
+      status: "not-started",
     },
   ];
 
@@ -90,12 +75,19 @@ export function generateRoadmap(
     0
   );
 
+  const hoursPerWeek = Math.max(
+    answers.weeklyHours,
+    1
+  );
+
   return {
-    id: createRoadmapId(targetRole),
+    id: `roadmap-${
+      slugify(targetRole) || "career-goal"
+    }`,
     title: `${targetRole} Career Roadmap`,
     targetRole,
     estimatedWeeks: Math.ceil(
-      totalHours / weeklyHours
+      totalHours / hoursPerWeek
     ),
     milestones,
   };
