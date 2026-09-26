@@ -16,8 +16,8 @@ export default function RoadmapPage() {
           </h1>
 
           <p className="mt-3 text-slate-600">
-            Follow these milestones in order and use each step
-            to build toward your target role.
+            Follow these milestones in order and use each step to build toward
+            your target role.
           </p>
 
           <div className="mt-6">
@@ -37,16 +37,12 @@ export default function RoadmapPage() {
               aria-label="Roadmap progress"
               aria-valuemin={0}
               aria-valuemax={100}
-              aria-valuenow={
-                mockRoadmap.progressPercentage ?? 0
-              }
+              aria-valuenow={mockRoadmap.progressPercentage ?? 0}
             >
               <div
                 className="h-full rounded-full bg-teal-600"
                 style={{
-                  width: `${
-                    mockRoadmap.progressPercentage ?? 0
-                  }%`,
+                  width: `${mockRoadmap.progressPercentage ?? 0}%`,
                 }}
               />
             </div>
@@ -54,15 +50,13 @@ export default function RoadmapPage() {
         </header>
 
         <div className="mt-8 space-y-6">
-          {mockRoadmap.milestones.map(
-            (milestone, index) => (
-              <MilestoneCard
-                key={milestone.id}
-                milestone={milestone}
-                position={index + 1}
-              />
-            )
-          )}
+          {mockRoadmap.milestones.map((milestone, index) => (
+            <MilestoneCard
+              key={milestone.id}
+              milestone={milestone}
+              position={index + 1}
+            />
+          ))}
         </div>
       </section>
     </SharedLayout>
