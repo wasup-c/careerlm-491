@@ -1,21 +1,49 @@
+import { mockRoadmap } from "@/lib/mockRoadmap";
+
 import type {
-  CareerRoadmap,
+  GenerateRoadmapResponse,
   QuestionnaireResponse,
 } from "@/types/career";
 
-/**
- * Generates a roadmap from a validated questionnaire.
- *
- * The API route is responsible for validating input before calling
- * this function. The actual roadmap-generation implementation will
- * be connected here when the team's generation service is available.
- */
-export async function generateRoadmap(
+export function generateRoadmap(
   questionnaire: QuestionnaireResponse
-): Promise<CareerRoadmap> {
-  void questionnaire;
+): GenerateRoadmapResponse {
+  const targetRole =
+    questionnaire.targetCareerRole.trim();
 
-  throw new Error(
-    "Roadmap generation service is not implemented yet."
-  );
+  if (!targetRole) {
+    return {
+      success: false,
+      error: {
+        code: "VALIDATION_ERROR",
+        message:
+          "A target career role is required to generate a roadmap.",
+        fieldErrors: {
+          targetCareerRole:
+            "Target career role is required.",
+        },
+      },
+    };
+  }
+
+  return {
+    success: true,
+    roadmap: {
+      ...mockRoadmap,
+
+      id: `roadmap-${targetRole
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "")}`,
+
+      targetRole,
+
+      milestones: mockRoadmap.milestones.map(
+        (milestone) => ({
+          ...milestone,
+          skills: [...milestone.skills],
+        })
+      ),
+    },
+  };
 }
