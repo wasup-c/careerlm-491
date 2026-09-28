@@ -21,7 +21,6 @@ export interface QuestionnaireResponse {
 export interface CareerRoadmap {
   id: string;
   targetRole: string;
-  progressPercentage?: number;
   milestones: RoadmapMilestone[];
 }
 
