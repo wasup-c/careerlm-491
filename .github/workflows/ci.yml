@@ -78,7 +78,7 @@ jobs:
         run: npm run lint
 
       - name: Run automated tests
-        run: npm run test --if-present
+        run: npm test
 
       - name: Build production application
         run: npm run build
