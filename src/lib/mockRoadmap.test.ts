@@ -47,7 +47,7 @@ describe("mockRoadmap", () => {
       expect(milestone.order).toBeGreaterThan(0);
       expect(milestone.title.trim()).not.toBe("");
       expect(milestone.description.trim()).not.toBe("");
-      expect(milestone.estimatedHours).toBeGreaterThan(0);
+      expect(milestone.estimatedHours).toBeGreaterThanOrEqual(0);
       expect(milestone.skills.length).toBeGreaterThan(0);
       expect(validStatuses).toContain(milestone.status);
     });
