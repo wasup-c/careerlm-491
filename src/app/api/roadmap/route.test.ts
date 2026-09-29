@@ -217,5 +217,63 @@ describe("POST /api/roadmap", () => {
         roadmap: generatedRoadmap,
       });
     });
+    it("passes the validated questionnaire to the generator", async () => {
+      mocks.generateRoadmap.mockReturnValue(
+        generatedRoadmap
+      );
+
+      await callRoute(validQuestionnaire);
+
+      expect(mocks.generateRoadmap).toHaveBeenCalledWith(
+        validQuestionnaire
+      );
+    });
+    it("returns the generated roadmap on success", async () => {
+      mocks.generateRoadmap.mockReturnValue(
+        generatedRoadmap
+      );
+
+      const { response, body } =
+        await callRoute(validQuestionnaire);
+
+      expect(response.status).toBe(200);
+
+      expect(body).toEqual({
+        success: true,
+        roadmap: generatedRoadmap,
+      });
+    });
+    it("returns a controlled error when generation fails", async () => {
+      mocks.generateRoadmap.mockImplementation(() => {
+        throw new Error("Sensitive internal generation failure");
+      });
+
+      const { response, body } =
+        await callRoute(validQuestionnaire);
+
+      expect(response.status).toBe(500);
+
+      expect(body).toEqual({
+        success: false,
+        error: {
+          code: "GENERATION_FAILED",
+          message: "Roadmap generation failed.",
+        },
+      });
+    });
+    it("does not expose internal generation errors", async () => {
+      mocks.generateRoadmap.mockImplementation(() => {
+        throw new Error(
+          "Sensitive internal generation failure"
+        );
+      });
+
+      const { body } =
+        await callRoute(validQuestionnaire);
+
+      expect(JSON.stringify(body)).not.toContain(
+        "Sensitive internal generation failure"
+      );
+    });
   });
 });
