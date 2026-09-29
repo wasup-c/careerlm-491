@@ -1,6 +1,6 @@
 import { generateRoadmap } from "@/lib/generateRoadmap";
 import { validateQuestionnaire } from "@/lib/validation/questionnaire";
-import type { GenerateRoadmapResponse, CareerRoadmap } from "@/types/career";
+import type { GenerateRoadmapResponse } from "@/types/career";
 
 export async function POST(
   request: Request
@@ -49,7 +49,7 @@ export async function POST(
     return Response.json(
       {
         success: true,
-        roadmap: roadmap,
+        roadmap,
       },
       {
         status: 200,
