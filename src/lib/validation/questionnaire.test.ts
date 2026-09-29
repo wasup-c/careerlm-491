@@ -7,7 +7,7 @@ const validQuestionnaire = {
 
   // Replace these two with exact values from your onboarding form.
   targetTimeline: "3-6 months",
-  preferredLearningStyle: "Hands-on projects",
+  preferredLearningStyle: ["Hands-on projects"],
 
   weeklyTimeCommitment: "5-10 hours",
 };
@@ -225,6 +225,34 @@ describe("validateQuestionnaire", () => {
         result.fieldErrors.preferredLearningStyle
       ).toBeDefined();
       expect(result.fieldErrors.weeklyTimeCommitment).toBeDefined();
+    }
+  });
+  it("rejects a string instead of a learning style array", () => {
+    const result = validateQuestionnaire({
+      ...validQuestionnaire,
+      preferredLearningStyle: "Hands-on projects",
+    });
+  
+    expect(result.valid).toBe(false);
+  
+    if (!result.valid) {
+      expect(
+        result.fieldErrors.preferredLearningStyle
+      ).toBeDefined();
+    }
+  });
+  it("rejects an empty preferred learning style array", () => {
+    const result = validateQuestionnaire({
+      ...validQuestionnaire,
+        preferredLearningStyle: [],
+    });
+  
+    expect(result.valid).toBe(false);
+  
+    if (!result.valid) {
+      expect(
+        result.fieldErrors.preferredLearningStyle
+      ).toBeDefined();
     }
   });
 });
