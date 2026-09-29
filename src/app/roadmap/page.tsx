@@ -3,6 +3,21 @@ import SharedLayout from "@/components/SharedLayout";
 import { mockRoadmap } from "@/lib/mockRoadmap";
 
 export default function RoadmapPage() {
+  const completedMilestones = mockRoadmap.milestones.filter(
+    (milestone) => milestone.status === "completed"
+  ).length;
+
+  const progressPercentage =
+    mockRoadmap.milestones.length === 0
+      ? 0
+      : Math.round(
+          (completedMilestones / mockRoadmap.milestones.length) * 100
+        );
+
+  const orderedMilestones = [...mockRoadmap.milestones].sort(
+    (left, right) => left.order - right.order
+  );
+
   return (
     <SharedLayout>
       <section className="mx-auto w-full max-w-3xl">
@@ -20,6 +35,13 @@ export default function RoadmapPage() {
             your target role.
           </p>
 
+          <p className="mt-3 text-sm text-slate-600">
+            Estimated roadmap length:{" "}
+            <span className="font-semibold text-slate-900">
+              {mockRoadmap.estimatedWeeks} weeks
+            </span>
+          </p>
+
           <div className="mt-6">
             <div className="flex items-center justify-between gap-4 text-sm">
               <span className="font-semibold text-slate-900">
@@ -27,7 +49,7 @@ export default function RoadmapPage() {
               </span>
 
               <span className="text-slate-600">
-                {mockRoadmap.progressPercentage ?? 0}%
+                {progressPercentage}%
               </span>
             </div>
 
@@ -37,12 +59,12 @@ export default function RoadmapPage() {
               aria-label="Roadmap progress"
               aria-valuemin={0}
               aria-valuemax={100}
-              aria-valuenow={mockRoadmap.progressPercentage ?? 0}
+              aria-valuenow={progressPercentage}
             >
               <div
                 className="h-full rounded-full bg-teal-600"
                 style={{
-                  width: `${mockRoadmap.progressPercentage ?? 0}%`,
+                  width: `${progressPercentage}%`,
                 }}
               />
             </div>
@@ -50,11 +72,11 @@ export default function RoadmapPage() {
         </header>
 
         <div className="mt-8 space-y-6">
-          {mockRoadmap.milestones.map((milestone, index) => (
+          {orderedMilestones.map((milestone) => (
             <MilestoneCard
-              key={milestone.id}
+              key={milestone.id ?? `milestone-${milestone.order}`}
               milestone={milestone}
-              position={index + 1}
+              position={milestone.order}
             />
           ))}
         </div>
