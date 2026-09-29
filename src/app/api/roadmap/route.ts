@@ -1,6 +1,6 @@
 import { generateRoadmap } from "@/lib/generateRoadmap";
 import { validateQuestionnaire } from "@/lib/validation/questionnaire";
-import type { GenerateRoadmapResponse } from "@/types/career";
+import type { GenerateRoadmapResponse, CareerRoadmap } from "@/types/career";
 
 export async function POST(
   request: Request
@@ -44,15 +44,10 @@ export async function POST(
 
   // Input is now validated and safe to pass to generation.
   try {
-    const roadmap = await generateRoadmap(validation.data);
+    const response = await generateRoadmap(validation.data);
 
-    const responseBody: GenerateRoadmapResponse = {
-      success: true,
-      roadmap,
-    };
-
-    return Response.json(responseBody, {
-      status: 200,
+    return Response.json(response, {
+      status: response.success ? 200 : 400,
     });
   } catch {
     const responseBody: GenerateRoadmapResponse = {
