@@ -28,12 +28,40 @@ type Errors = Record<number, string>;
 
 const questions = questionListData as Question[];
 
+/**
+ * Maps the API's questionnaire field names back to the numeric
+ * question IDs used in this component's local state, so server-side
+ * field errors can be displayed next to the right question.
+ */
+const FIELD_NAME_TO_QUESTION_ID: Record<string, number> = {
+  targetCareerRole: 1,
+  experienceLevel: 2,
+  weeklyTimeCommitment: 3,
+  targetTimeline: 4,
+  preferredLearningStyle: 5,
+};
+
+type RoadmapApiResponse =
+  | {
+      success: true;
+      roadmap: unknown;
+    }
+  | {
+      success: false;
+      error: {
+        code: "VALIDATION_ERROR" | "GENERATION_FAILED";
+        message: string;
+        fieldErrors?: Record<string, string>;
+      };
+    };
+
 export default function QuestionsList() {
   const router = useRouter();
 
   const [answers, setAnswers] = useState<Answers>({});
   const [errors, setErrors] = useState<Errors>({});
   const [submitError, setSubmitError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   function clearQuestionError(questionId: number) {
     setErrors((previous) => {
@@ -142,25 +170,107 @@ export default function QuestionsList() {
     return true;
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  /**
+   * Builds the request body expected by POST /api/roadmap.
+   * Assumes validateAll() has already confirmed every question has
+   * an answer of the expected shape.
+   */
+  function buildQuestionnairePayload() {
+    return {
+      targetCareerRole: answers[1] as string,
+      experienceLevel: answers[2] as string,
+      weeklyTimeCommitment: answers[3] as string,
+      targetTimeline: answers[4] as string,
+      preferredLearningStyle: answers[5] as string[],
+    };
+  }
+
+  /**
+   * Applies field-level validation errors returned by the server onto
+   * the matching question, using FIELD_NAME_TO_QUESTION_ID to translate
+   * between the API's field names and this component's question IDs.
+   */
+  function applyServerFieldErrors(
+    fieldErrors: Record<string, string>
+  ) {
+    const mappedErrors: Errors = {};
+
+    Object.entries(fieldErrors).forEach(([fieldName, message]) => {
+      const questionId = FIELD_NAME_TO_QUESTION_ID[fieldName];
+
+      if (questionId !== undefined) {
+        mappedErrors[questionId] = message;
+      }
+    });
+
+    setErrors(mappedErrors);
+  }
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
+    // Prevent duplicate submissions while a request is already in flight.
+    if (isSubmitting) {
+      return;
+    }
 
     if (!validateAll()) {
       return;
     }
 
-    /*
-     * Temporary integration behavior.
-     *
-     * Sprint 2 persistence should eventually replace this temporary
-     * browser storage with the CareerLM repository/service layer.
-     */
-    sessionStorage.setItem(
-      "careerlm-onboarding-answers",
-      JSON.stringify(answers)
-    );
+    setIsSubmitting(true);
+    setSubmitError("");
 
-    router.push("/generating");
+    try {
+      const response = await fetch("/api/roadmap", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(buildQuestionnairePayload()),
+      });
+
+      const body: RoadmapApiResponse = await response.json();
+
+      if (body.success) {
+        /*
+         * Temporary integration behavior.
+         *
+         * The generated roadmap will eventually be handed off through
+         * Member 5's save/reload/retake workflow. Until that hand-off
+         * is agreed, the roadmap is kept in sessionStorage so the
+         * /generating destination can read it.
+         */
+        sessionStorage.setItem(
+          "careerlm-generated-roadmap",
+          JSON.stringify(body.roadmap)
+        );
+
+        router.push("/generating");
+        return;
+      }
+
+      if (body.error.code === "VALIDATION_ERROR" && body.error.fieldErrors) {
+        applyServerFieldErrors(body.error.fieldErrors);
+        setSubmitError(
+          "Please fix the highlighted questions before continuing."
+        );
+        return;
+      }
+
+      // GENERATION_FAILED, or a VALIDATION_ERROR with no field detail.
+      setSubmitError(
+        body.error.message ||
+          "Something went wrong while generating your roadmap. Please try again."
+      );
+    } catch {
+      // Network failure, timeout, or a response that wasn't valid JSON.
+      setSubmitError(
+        "Unable to reach CareerLM right now. Please check your connection and try again."
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -202,13 +312,14 @@ export default function QuestionsList() {
                         event.target.value
                       )
                     }
+                    disabled={isSubmitting}
                     aria-invalid={Boolean(questionError)}
                     aria-describedby={
                       questionError
                         ? `question-${question.id}-error`
                         : undefined
                     }
-                    className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-900 outline-none transition focus:border-teal-600 focus:ring-2 focus:ring-teal-200"
+                    className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-900 outline-none transition focus:border-teal-600 focus:ring-2 focus:ring-teal-200 disabled:cursor-not-allowed disabled:bg-slate-100"
                     placeholder="Enter your response"
                   />
                 </div>
@@ -236,6 +347,7 @@ export default function QuestionsList() {
                               response.text
                             )
                           }
+                          disabled={isSubmitting}
                           className="mt-1"
                         />
 
@@ -274,6 +386,7 @@ export default function QuestionsList() {
                                 event.target.checked
                               )
                             }
+                            disabled={isSubmitting}
                             className="mt-1"
                           />
 
@@ -313,9 +426,10 @@ export default function QuestionsList() {
       <div className="mt-8 flex justify-end border-t border-slate-200 pt-6">
         <button
           type="submit"
-          className="rounded-md bg-teal-700 px-6 py-3 font-semibold text-white transition hover:bg-teal-800 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2"
+          disabled={isSubmitting}
+          className="rounded-md bg-teal-700 px-6 py-3 font-semibold text-white transition hover:bg-teal-800 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-teal-400"
         >
-          Generate My Roadmap
+          {isSubmitting ? "Generating..." : "Generate My Roadmap"}
         </button>
       </div>
     </form>
