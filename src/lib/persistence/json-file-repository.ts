@@ -32,26 +32,33 @@ import {
   normalizeUserId,
 } from "./validation";
 
+/**
+ * Process-local mutation queues keyed by persistence file.
+ *
+ * Repository instances pointing to the same file must share the same
+ * queue so concurrent mutations cannot read and overwrite stale state.
+ *
+ * This protects writes inside the current Node.js process. A future
+ * database-backed repository will provide stronger cross-process
+ * concurrency guarantees.
+ */
+const writeChainsByFile =
+  new Map<string, Promise<void>>();
+
 export class JsonFileCareerRepository
   implements CareerRepository
 {
   private readonly filePath: string;
 
-  /**
-   * Serializes mutations inside the current Node.js process.
-   *
-   * This avoids two requests reading the same state and overwriting
-   * each other's changes during local development.
-   */
-  private writeChain: Promise<void> = Promise.resolve();
-
   constructor(filePath?: string) {
     this.filePath =
-      filePath ??
-      path.join(
-        process.cwd(),
-        ".careerlm",
-        "data.json"
+      path.resolve(
+        filePath ??
+          path.join(
+            process.cwd(),
+            ".careerlm",
+            "data.json"
+          )
       );
   }
 
@@ -135,7 +142,7 @@ export class JsonFileCareerRepository
     });
 
     const temporaryPath =
-      `${this.filePath}.${process.pid}.${Date.now()}.tmp`;
+      `${this.filePath}.${process.pid}.${randomUUID()}.tmp`;
 
     await writeFile(
       temporaryPath,
@@ -149,39 +156,80 @@ export class JsonFileCareerRepository
     );
   }
 
-  /**
-   * Provides a basic process-level mutation lock.
-   */
-  private async mutate<T>(
-    callback: (
-      state: PersistenceState
-    ) => Promise<T> | T
-  ): Promise<T> {
-    let releaseLock!: () => void;
+/**
+ * Serializes mutations across repository instances that share the
+ * same persistence file.
+ *
+ * Repository instances pointing to different files remain independent.
+ */
+private async mutate<T>(
+  callback: (
+    state: PersistenceState
+  ) => Promise<T> | T
+): Promise<T> {
+  const lockKey =
+    this.filePath;
 
-    const previousWrite =
-      this.writeChain;
+  const previousWrite =
+    writeChainsByFile.get(
+      lockKey
+    ) ??
+    Promise.resolve();
 
-    this.writeChain =
-      new Promise<void>((resolve) => {
-        releaseLock = resolve;
-      });
+  let releaseLock!: () => void;
 
-    await previousWrite;
+  const currentLock =
+    new Promise<void>(
+      (resolve) => {
+        releaseLock =
+          resolve;
+      }
+    );
 
-    try {
-      const state = await this.readState();
+  const queuedLock =
+    previousWrite.then(
+      () => currentLock
+    );
 
-      const result =
-        await callback(state);
+  writeChainsByFile.set(
+    lockKey,
+    queuedLock
+  );
 
-      await this.writeState(state);
+  await previousWrite;
 
-      return structuredClone(result);
-    } finally {
-      releaseLock();
+  try {
+    const state =
+      await this.readState();
+
+    const result =
+      await callback(state);
+
+    await this.writeState(
+      state
+    );
+
+    return structuredClone(
+      result
+    );
+  } finally {
+    releaseLock();
+
+    /**
+     * Only remove this queue if another mutation has not already
+     * been queued behind it.
+     */
+    if (
+      writeChainsByFile.get(
+        lockKey
+      ) === queuedLock
+    ) {
+      writeChainsByFile.delete(
+        lockKey
+      );
     }
   }
+}
 
   async saveQuestionnaire(
     userId: string,

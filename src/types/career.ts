@@ -20,7 +20,7 @@ export interface QuestionnaireResponse {
   targetCareerRole: string;
   experienceLevel: string;
   targetTimeline: string;
-  preferredLearningStyle: string;
+  preferredLearningStyle: string[];
   weeklyTimeCommitment: WeeklyTimeCommitment;
 }
 
