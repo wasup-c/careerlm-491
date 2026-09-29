@@ -12,7 +12,7 @@ const createQuestionnaire = (
   targetCareerRole: "Frontend Developer",
   experienceLevel: "beginner",
   targetTimeline: "6 months",
-  preferredLearningStyle: "project-based",
+  preferredLearningStyle: ["project-based"],
   weeklyTimeCommitment: "5-10 hours",
   ...overrides,
 });
