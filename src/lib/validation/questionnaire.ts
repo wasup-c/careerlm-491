@@ -34,14 +34,14 @@ const VALID_TARGET_TIMELINES = [
 
 const VALID_LEARNING_STYLES = [
   "Structured curriculum",
-   "Hands-on projects",
-      "Mentorship and guidance",
-      "Community support",
-      "Flexibility to learn at my own pace",
-      "Building strong foundational knowledge",
-      "Networking opportunities",
-      "Access to industry insights and trends",
-      "Exploring multiple areas before specializing"
+  "Hands-on projects",
+  "Mentorship and guidance",
+  "Community support",
+  "Flexibility to learn at my own pace",
+  "Building strong foundational knowledge",
+  "Networking opportunities",
+  "Access to industry insights and trends",
+  "Exploring multiple areas before specializing"
 ] as const;
 
 const VALID_WEEKLY_TIME_COMMITMENTS: readonly WeeklyTimeCommitment[] = [
@@ -80,11 +80,16 @@ function isNonEmptyString(value: unknown): value is string {
 
 function isValidPreferredLearningStyle(
   value: unknown
-): value is string {
+): value is string[] {
   return (
-    typeof value === "string" &&
-    VALID_LEARNING_STYLES.includes(
-      value as (typeof VALID_LEARNING_STYLES)[number]
+    Array.isArray(value) &&
+    value.length > 0 &&
+    value.every(
+      (style) =>
+        typeof style === "string" &&
+        VALID_LEARNING_STYLES.includes(
+          style as (typeof VALID_LEARNING_STYLES)[number]
+        )
     )
   );
 }
@@ -157,7 +162,7 @@ export function validateQuestionnaire(
       targetCareerRole: data.targetCareerRole as string,
       experienceLevel: data.experienceLevel as string,
       targetTimeline: data.targetTimeline as string,
-      preferredLearningStyle: data.preferredLearningStyle as string,
+      preferredLearningStyle: data.preferredLearningStyle as string[],
       weeklyTimeCommitment: data.weeklyTimeCommitment as WeeklyTimeCommitment,
     },
   };
