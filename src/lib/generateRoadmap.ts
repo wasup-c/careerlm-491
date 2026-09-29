@@ -31,11 +31,6 @@ export function generateRoadmap(
     roadmap: {
       ...mockRoadmap,
 
-      id: `roadmap-${targetRole
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/^-|-$/g, "")}`,
-
       targetRole,
 
       milestones: mockRoadmap.milestones.map(
