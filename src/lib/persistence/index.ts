@@ -50,3 +50,7 @@ export {
   PersistenceNotFoundError,
   PersistenceValidationError,
 } from "./errors";
+
+export {
+  InMemoryCareerRepository,
+} from "./in-memory-repository";
