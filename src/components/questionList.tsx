@@ -28,12 +28,40 @@ type Errors = Record<number, string>;
 
 const questions = questionListData as Question[];
 
+/**
+ * Maps the API's questionnaire field names back to the numeric
+ * question IDs used in this component's local state, so server-side
+ * field errors can be displayed next to the right question.
+ */
+const FIELD_NAME_TO_QUESTION_ID: Record<string, number> = {
+  targetCareerRole: 1,
+  experienceLevel: 2,
+  weeklyTimeCommitment: 3,
+  targetTimeline: 4,
+  preferredLearningStyle: 5,
+};
+
+type RoadmapApiResponse =
+  | {
+      success: true;
+      roadmap: unknown;
+    }
+  | {
+      success: false;
+      error: {
+        code: "VALIDATION_ERROR" | "GENERATION_FAILED";
+        message: string;
+        fieldErrors?: Record<string, string>;
+      };
+    };
+
 export default function QuestionsList() {
   const router = useRouter();
 
   const [answers, setAnswers] = useState<Answers>({});
   const [errors, setErrors] = useState<Errors>({});
   const [submitError, setSubmitError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   function clearQuestionError(questionId: number) {
     setErrors((previous) => {
@@ -122,202 +150,3 @@ export default function QuestionsList() {
       if (question.type === "multiple-choice-unordered") {
         if (!Array.isArray(value) || value.length === 0) {
           newErrors[question.id] =
-            "Please select at least one option.";
-        }
-      }
-    });
-
-    setErrors(newErrors);
-
-    if (Object.keys(newErrors).length > 0) {
-      setSubmitError(
-        "Please answer all required questions before continuing."
-      );
-
-      return false;
-    }
-
-    setSubmitError("");
-
-    return true;
-  }
-
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
-    if (!validateAll()) {
-      return;
-    }
-
-    /*
-     * Temporary integration behavior.
-     *
-     * Sprint 2 persistence should eventually replace this temporary
-     * browser storage with the CareerLM repository/service layer.
-     */
-    sessionStorage.setItem(
-      "careerlm-onboarding-answers",
-      JSON.stringify(answers)
-    );
-
-    router.push("/generating");
-  }
-
-  return (
-    <form onSubmit={handleSubmit} noValidate>
-      <div className="space-y-8">
-        {questions.map((question) => {
-          const answer = answers[question.id];
-          const questionError = errors[question.id];
-
-          return (
-            <fieldset
-              key={question.id}
-              className="rounded-lg border border-slate-200 p-5"
-            >
-              <legend className="px-2 text-lg font-semibold text-slate-900">
-                {question.id}. {question.text}
-              </legend>
-
-              {question.type === "text" && (
-                <div className="mt-4">
-                  <label
-                    htmlFor={`question-${question.id}`}
-                    className="sr-only"
-                  >
-                    {question.text}
-                  </label>
-
-                  <input
-                    id={`question-${question.id}`}
-                    type="text"
-                    value={
-                      typeof answer === "string"
-                        ? answer
-                        : ""
-                    }
-                    onChange={(event) =>
-                      handleTextChange(
-                        question.id,
-                        event.target.value
-                      )
-                    }
-                    aria-invalid={Boolean(questionError)}
-                    aria-describedby={
-                      questionError
-                        ? `question-${question.id}-error`
-                        : undefined
-                    }
-                    className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-900 outline-none transition focus:border-teal-600 focus:ring-2 focus:ring-teal-200"
-                    placeholder="Enter your response"
-                  />
-                </div>
-              )}
-
-              {question.type ===
-                "multiple-choice-ordered" && (
-                <div className="mt-4 space-y-3">
-                  {(question.responses ?? []).map(
-                    (response) => (
-                      <label
-                        key={response.text}
-                        className="flex cursor-pointer items-start gap-3 rounded-md border border-slate-200 p-3 transition hover:bg-slate-50"
-                      >
-                        <input
-                          type="radio"
-                          name={`question-${question.id}`}
-                          value={response.text}
-                          checked={
-                            answer === response.text
-                          }
-                          onChange={() =>
-                            handleSingleChoiceChange(
-                              question.id,
-                              response.text
-                            )
-                          }
-                          className="mt-1"
-                        />
-
-                        <span className="text-slate-700">
-                          {response.text}
-                        </span>
-                      </label>
-                    )
-                  )}
-                </div>
-              )}
-
-              {question.type ===
-                "multiple-choice-unordered" && (
-                <div className="mt-4 space-y-3">
-                  {(question.responses ?? []).map(
-                    (response) => {
-                      const isChecked =
-                        Array.isArray(answer) &&
-                        answer.includes(response.text);
-
-                      return (
-                        <label
-                          key={response.text}
-                          className="flex cursor-pointer items-start gap-3 rounded-md border border-slate-200 p-3 transition hover:bg-slate-50"
-                        >
-                          <input
-                            type="checkbox"
-                            name={`question-${question.id}`}
-                            value={response.text}
-                            checked={isChecked}
-                            onChange={(event) =>
-                              handleMultiChoiceChange(
-                                question.id,
-                                response.text,
-                                event.target.checked
-                              )
-                            }
-                            className="mt-1"
-                          />
-
-                          <span className="text-slate-700">
-                            {response.text}
-                          </span>
-                        </label>
-                      );
-                    }
-                  )}
-                </div>
-              )}
-
-              {questionError && (
-                <p
-                  id={`question-${question.id}-error`}
-                  role="alert"
-                  className="mt-3 text-sm font-medium text-red-700"
-                >
-                  {questionError}
-                </p>
-              )}
-            </fieldset>
-          );
-        })}
-      </div>
-
-      {submitError && (
-        <div
-          role="alert"
-          className="mt-6 rounded-md border border-red-300 bg-red-50 p-4 text-red-800"
-        >
-          {submitError}
-        </div>
-      )}
-
-      <div className="mt-8 flex justify-end border-t border-slate-200 pt-6">
-        <button
-          type="submit"
-          className="rounded-md bg-teal-700 px-6 py-3 font-semibold text-white transition hover:bg-teal-800 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2"
-        >
-          Generate My Roadmap
-        </button>
-      </div>
-    </form>
-  );
-}
