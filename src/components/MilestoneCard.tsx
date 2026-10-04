@@ -72,16 +72,10 @@ export default function MilestoneCard({
 
       <p className="mt-5 text-sm text-slate-600">
         <span className="font-semibold text-slate-900">
-          Estimated time:
+          Estimated effort:
         </span>{" "}
-        {milestone.estimatedTime}
+        {milestone.estimatedHours} hours
       </p>
-
-      {milestone.additionalInfo && (
-        <p className="mt-3 rounded-lg bg-slate-50 p-4 text-sm leading-6 text-slate-600">
-          {milestone.additionalInfo}
-        </p>
-      )}
     </article>
   );
 }

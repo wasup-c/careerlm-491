@@ -1,3 +1,9 @@
+import type {
+  MilestoneInput,
+  MilestoneStatus as PersistenceMilestoneStatus,
+  RoadmapInput,
+} from "@/lib/persistence/domain";
+
 // QuestionnaireResponse
 // CareerRoadmap
 // RoadmapMilestone
@@ -18,27 +24,11 @@ export interface QuestionnaireResponse {
   weeklyTimeCommitment: WeeklyTimeCommitment;
 }
 
-export interface CareerRoadmap {
-  id: string;
-  targetRole: string;
-  progressPercentage?: number;
-  milestones: RoadmapMilestone[];
-}
+export type MilestoneStatus = PersistenceMilestoneStatus;
 
-export type MilestoneStatus =
-  | "not-started"
-  | "in-progress"
-  | "completed";
+export type RoadmapMilestone = MilestoneInput;
 
-export interface RoadmapMilestone {
-  id: string;
-  title: string;
-  description: string;
-  skills: string[];
-  estimatedTime: string;
-  status: MilestoneStatus;
-  additionalInfo?: string;
-}
+export type CareerRoadmap = RoadmapInput;
 
 export type GenerateRoadmapErrorCode =
   | "VALIDATION_ERROR"

@@ -23,8 +23,9 @@ const validQuestionnaire: QuestionnaireResponse = {
   preferredLearningStyle: ["Hands-on projects"],
 };
 const generatedRoadmap: CareerRoadmap = {
-  id: "roadmap-1",
+  title: "Software Engineer Career Roadmap",
   targetRole: "Software Engineer",
+  estimatedWeeks: 12,
   milestones: [],
 };
 
