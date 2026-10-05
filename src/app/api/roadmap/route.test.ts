@@ -199,7 +199,10 @@ describe("POST /api/roadmap", () => {
     });
     it("calls generator after validation succeeds", async () => {
       mocks.generateRoadmap.mockResolvedValue(
-        generatedRoadmap
+        {
+          success: true,
+          roadmap: generatedRoadmap,
+        }
       );
 
       const { response, body } =
@@ -220,7 +223,10 @@ describe("POST /api/roadmap", () => {
     });
     it("passes the validated questionnaire to the generator", async () => {
       mocks.generateRoadmap.mockReturnValue(
-        generatedRoadmap
+        {
+          success: true,
+          roadmap: generatedRoadmap,
+        }
       );
 
       await callRoute(validQuestionnaire);
@@ -231,7 +237,10 @@ describe("POST /api/roadmap", () => {
     });
     it("returns the generated roadmap on success", async () => {
       mocks.generateRoadmap.mockReturnValue(
-        generatedRoadmap
+        {
+          success: true,
+          roadmap: generatedRoadmap,
+        }
       );
 
       const { response, body } =
