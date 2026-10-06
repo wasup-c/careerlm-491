@@ -1,6 +1,7 @@
 import MilestoneCard from "@/components/MilestoneCard";
 import SharedLayout from "@/components/SharedLayout";
 import { mockRoadmap } from "@/lib/mockRoadmap";
+import Link from "next/link";
 
 export default function RoadmapPage() {
   const completedMilestones = mockRoadmap.milestones.filter(
@@ -79,6 +80,15 @@ export default function RoadmapPage() {
               position={milestone.order}
             />
           ))}
+        </div>
+
+        <div className="mt-8 flex justify-end">
+          <Link
+            href="/portfolio"
+            className="rounded-lg bg-teal-600 px-4 py-2 font-semibold text-white transition hover:bg-teal-700"
+          >
+            View portfolio
+          </Link>
         </div>
       </section>
     </SharedLayout>
