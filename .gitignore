@@ -43,3 +43,7 @@ next-env.d.ts
 
 # CareerLM local persistence data
 .careerlm/
+
+# Automated test and coverage artifacts
+coverage/
+test-results/
