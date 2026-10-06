@@ -44,17 +44,18 @@ export async function POST(
 
   // Input is now validated and safe to pass to generation.
   try {
-    const roadmap = await generateRoadmap(validation.data);
+    const generationResult =
+      await generateRoadmap(validation.data);
 
-    return Response.json(
-      {
-        success: true,
-        roadmap,
-      },
-      {
-        status: 200,
-      }
-    );
+    if (!generationResult.success) {
+      return Response.json(generationResult, {
+        status: 500,
+      });
+    }
+
+    return Response.json(generationResult, {
+      status: 200,
+    });
   } catch {
     const responseBody: GenerateRoadmapResponse = {
       success: false,
