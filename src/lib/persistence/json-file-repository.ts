@@ -32,6 +32,10 @@ import {
   normalizeUserId,
 } from "./validation";
 
+import {
+  validatePersistenceState,
+} from "./state-validation";
+
 /**
  * Process-local mutation queues keyed by persistence file.
  *
@@ -62,66 +66,51 @@ export class JsonFileCareerRepository
       );
   }
 
-  private async readState(): Promise<PersistenceState> {
-    try {
-      const raw = await readFile(
+  private async readState():
+  Promise<PersistenceState>
+{
+  try {
+    const raw =
+      await readFile(
         this.filePath,
         "utf8"
       );
 
-      const parsed = JSON.parse(raw) as unknown;
+    const parsed =
+      JSON.parse(raw) as unknown;
 
-      if (
-        typeof parsed !== "object" ||
-        parsed === null
-      ) {
-        throw new PersistenceCorruptionError(
-          "CareerLM persistence data is not a valid object."
-        );
-      }
+    return validatePersistenceState(
+      parsed
+    );
+  } catch (error) {
+    const filesystemError =
+      error as NodeJS.ErrnoException;
 
-      const candidate =
-        parsed as Partial<PersistenceState>;
+    if (
+      filesystemError.code ===
+      "ENOENT"
+    ) {
+      return createEmptyPersistenceState();
+    }
 
-      if (candidate.schemaVersion !== 1) {
-        throw new PersistenceCorruptionError(
-          "Unsupported CareerLM persistence schema version."
-        );
-      }
-
-      if (
-        typeof candidate.users !== "object" ||
-        candidate.users === null
-      ) {
-        throw new PersistenceCorruptionError(
-          "CareerLM persistence data does not contain a valid users object."
-        );
-      }
-
-      return candidate as PersistenceState;
-    } catch (error) {
-      const filesystemError =
-        error as NodeJS.ErrnoException;
-
-      if (filesystemError.code === "ENOENT") {
-        return createEmptyPersistenceState();
-      }
-
-      if (
-        error instanceof PersistenceCorruptionError
-      ) {
-        throw error;
-      }
-
-      if (error instanceof SyntaxError) {
-        throw new PersistenceCorruptionError(
-          "CareerLM persistence data contains invalid JSON."
-        );
-      }
-
+    if (
+      error instanceof
+      PersistenceCorruptionError
+    ) {
       throw error;
     }
+
+    if (
+      error instanceof SyntaxError
+    ) {
+      throw new PersistenceCorruptionError(
+        "CareerLM persistence data contains invalid JSON."
+      );
+    }
+
+    throw error;
   }
+}
 
   /**
    * Uses a temporary file + rename rather than writing directly over
