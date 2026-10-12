@@ -10,6 +10,8 @@ import type {
   QuestionnaireRecord,
   RoadmapInput,
   RoadmapRecord,
+  ProfileInput,
+  ProfileRecord,
 } from "./domain";
 
 import {
@@ -30,6 +32,7 @@ import {
   normalizeQuestionnaire,
   normalizeRoadmap,
   normalizeUserId,
+  normalizeProfile,
 } from "./validation";
 
 import {
@@ -218,6 +221,76 @@ private async mutate<T>(
       );
     }
   }
+}
+
+async saveProfile(
+  userId: string,
+  input: ProfileInput
+): Promise<ProfileRecord> {
+  const normalizedUserId =
+    normalizeUserId(userId);
+
+  const profile =
+    normalizeProfile(input);
+
+  return this.mutate(
+    async (state) => {
+      const now =
+        new Date().toISOString();
+
+      const currentUser =
+        state.users[
+          normalizedUserId
+        ] ?? {};
+
+      const existing =
+        currentUser.profile;
+
+      const record:
+        ProfileRecord = {
+          ...profile,
+
+          userId:
+            normalizedUserId,
+
+          schemaVersion: 1,
+
+          createdAt:
+            existing?.createdAt ??
+            now,
+
+          updatedAt: now,
+        };
+
+      state.users[
+        normalizedUserId
+      ] = {
+        ...currentUser,
+        profile: record,
+      };
+
+      return record;
+    }
+  );
+}
+
+async getProfile(
+  userId: string
+): Promise<ProfileRecord | null> {
+  const normalizedUserId =
+    normalizeUserId(userId);
+
+  const state =
+    await this.readState();
+
+  const profile =
+    state.users[
+      normalizedUserId
+    ]?.profile;
+
+  return profile
+    ? structuredClone(profile)
+    : null;
 }
 
   async saveQuestionnaire(

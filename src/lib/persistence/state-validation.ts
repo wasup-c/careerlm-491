@@ -279,7 +279,98 @@ import type {
       );
     }
   }
+
+  function validateProfileRecord(
+    value: unknown,
+    expectedUserId: string,
+    path: string
+  ): void {
+    const record =
+      requireRecord(
+        value,
+        path
+      );
   
+    const userId =
+      requireStoredUserId(
+        record.userId,
+        `${path}.userId`
+      );
+  
+    if (
+      userId !== expectedUserId
+    ) {
+      fail(
+        `${path}.userId`,
+        "does not match the owning user."
+      );
+    }
+  
+    if (
+      record.schemaVersion !== 1
+    ) {
+      fail(
+        `${path}.schemaVersion`,
+        "must equal 1."
+      );
+    }
+  
+    if (
+      record.name !== undefined
+    ) {
+      requireCanonicalString(
+        record.name,
+        `${path}.name`
+      );
+    }
+  
+    if (
+      record.targetRole !==
+      undefined
+    ) {
+      requireCanonicalString(
+        record.targetRole,
+        `${path}.targetRole`
+      );
+    }
+  
+    if (
+      record.experienceLevel !==
+      undefined
+    ) {
+      if (
+        typeof record.experienceLevel !==
+          "string" ||
+        !experienceLevels.has(
+          record.experienceLevel
+        )
+      ) {
+        fail(
+          `${path}.experienceLevel`,
+          "contains an unsupported experience level."
+        );
+      }
+    }
+  
+    const createdAt =
+      requireIsoTimestamp(
+        record.createdAt,
+        `${path}.createdAt`
+      );
+  
+    const updatedAt =
+      requireIsoTimestamp(
+        record.updatedAt,
+        `${path}.updatedAt`
+      );
+  
+    validateTimestampOrder(
+      createdAt,
+      updatedAt,
+      path
+    );
+  }
+
   function validateQuestionnaireRecord(
     value: unknown,
     expectedUserId: string,
@@ -595,6 +686,17 @@ import type {
         value,
         path
       );
+
+      if (
+        userState.profile !==
+        undefined
+      ) {
+        validateProfileRecord(
+          userState.profile,
+          userId,
+          `${path}.profile`
+        );
+      }
   
     if (
       userState.questionnaire !==
@@ -618,6 +720,7 @@ import type {
       );
     }
   }
+  
   
   /**
    * Validates data that has already been persisted by CareerLM.

@@ -8,6 +8,8 @@ import type {
   QuestionnaireRecord,
   RoadmapInput,
   RoadmapRecord,
+  ProfileInput,
+  ProfileRecord,
 } from "./domain";
 
 import {
@@ -27,6 +29,7 @@ import {
   normalizeQuestionnaire,
   normalizeRoadmap,
   normalizeUserId,
+  normalizeProfile,
 } from "./validation";
 
 /**
@@ -45,6 +48,71 @@ export class InMemoryCareerRepository
 {
   private state: PersistenceState =
     createEmptyPersistenceState();
+
+    async saveProfile(
+      userId: string,
+      input: ProfileInput
+    ): Promise<ProfileRecord> {
+      const normalizedUserId =
+        normalizeUserId(userId);
+    
+      const profile =
+        normalizeProfile(input);
+    
+      const now =
+        new Date().toISOString();
+    
+      const currentUser =
+        this.state.users[
+          normalizedUserId
+        ] ?? {};
+    
+      const existing =
+        currentUser.profile;
+    
+      const record:
+        ProfileRecord = {
+          ...profile,
+    
+          userId:
+            normalizedUserId,
+    
+          schemaVersion: 1,
+    
+          createdAt:
+            existing?.createdAt ??
+            now,
+    
+          updatedAt: now,
+        };
+    
+      this.state.users[
+        normalizedUserId
+      ] = {
+        ...currentUser,
+        profile: record,
+      };
+    
+      return structuredClone(
+        record
+      );
+    }
+    
+    async getProfile(
+      userId: string
+    ): Promise<ProfileRecord | null> {
+      const normalizedUserId =
+        normalizeUserId(userId);
+    
+      const profile =
+        this.state.users[
+          normalizedUserId
+        ]?.profile;
+    
+      return profile
+        ? structuredClone(profile)
+        : null;
+    }
 
   async saveQuestionnaire(
     userId: string,
