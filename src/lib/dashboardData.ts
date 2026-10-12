@@ -1,7 +1,6 @@
-import { completeProfile } from "@/lib/fixtures/dashboard";
-import { mockRoadmap } from "@/lib/mockRoadmap";
+import type { CareerDataService } from "@/lib/services";
+import type { QuestionnaireRecord } from "@/lib/persistence";
 import { getRoadmapProgress } from "@/lib/roadmapProgress";
-import type { CareerRoadmap } from "@/types/career";
 import type {
   TemporaryDashboardProfile,
   TemporaryRoadmapProgress,
@@ -12,12 +11,17 @@ export interface DashboardData {
   progress: TemporaryRoadmapProgress | null;
 }
 
+/** Any roadmap with milestones: a saved RoadmapRecord or a generated roadmap. */
+type DashboardRoadmap = {
+  milestones: Parameters<typeof getRoadmapProgress>[0];
+};
+
 /**
  * Converts Member 4's progress result into the dashboard's progress shape.
  * The calculation itself stays in getRoadmapProgress (Member 4).
  */
 export function toDashboardProgress(
-  roadmap: CareerRoadmap | null,
+  roadmap: DashboardRoadmap | null,
 ): TemporaryRoadmapProgress | null {
   if (!roadmap) return null;
 
@@ -32,23 +36,39 @@ export function toDashboardProgress(
 }
 
 /**
- * Builds the data shown on the dashboard from the current roadmap.
+ * Maps the saved questionnaire into the dashboard profile.
  *
- * The roadmap comes from the same source as the /roadmap page, so both
- * pages always agree on target role and progress. Once roadmaps are saved
- * through Member 1's careerDataService, pass that roadmap in instead.
- *
- * Name and experience level still come from fixtures until Member 3's
- * profile service is available.
+ * The questionnaire has no name field, so name stays unset ("Not set yet")
+ * until the profile owner adds one to the shared profile contract.
  */
-export function getDashboardData(
-  roadmap: CareerRoadmap | null = mockRoadmap,
-): DashboardData {
+export function toDashboardProfile(
+  questionnaire: QuestionnaireRecord | null,
+): TemporaryDashboardProfile {
+  if (!questionnaire) return {};
+
   return {
-    profile: {
-      ...completeProfile,
-      targetRole: roadmap?.targetRole ?? completeProfile.targetRole,
-    },
+    targetRole: questionnaire.targetRole,
+    experienceLevel: questionnaire.experienceLevel,
+  };
+}
+
+/**
+ * Reads the current user's saved questionnaire and roadmap through
+ * Member 1's CareerDataService.
+ *
+ * Server-only: the service reads the server-side repository, so call this
+ * from a server component, never from a client component.
+ */
+export async function loadDashboardData(
+  service: Pick<CareerDataService, "getMyQuestionnaire" | "getMyRoadmap">,
+): Promise<DashboardData> {
+  const [questionnaire, roadmap] = await Promise.all([
+    service.getMyQuestionnaire(),
+    service.getMyRoadmap(),
+  ]);
+
+  return {
+    profile: toDashboardProfile(questionnaire),
     progress: toDashboardProgress(roadmap),
   };
 }
