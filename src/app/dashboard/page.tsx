@@ -1,19 +1,22 @@
 // Dashboard page shell — SCRUM-139 [S3-M2]
-// Uses fixture data until Member 1's current-user and Member 3's profile
-// services are merged. Profile saves go through a temporary mock.
+// Target role and progress come from the current roadmap (the same source
+// as /roadmap) using Member 4's progress calculation. Name, experience
+// level, and profile saves stay mocked until Member 3's profile service exists.
 
 import type { Metadata } from "next";
 import Link from "next/link";
 import ProfileSection from "@/components/ProfileSection";
 import ProgressCard from "@/components/ProgressCard";
 import SharedLayout from "@/components/SharedLayout";
-import { completeProfile, sampleProgress } from "@/lib/fixtures/dashboard";
+import { getDashboardData } from "@/lib/dashboardData";
 
 export const metadata: Metadata = {
   title: "Dashboard | CareerLM",
 };
 
 export default function DashboardPage() {
+  const { profile, progress } = getDashboardData();
+
   return (
     <SharedLayout>
       <div className="mx-auto w-full max-w-3xl">
@@ -26,9 +29,9 @@ export default function DashboardPage() {
         </p>
 
         <div className="mt-8 grid gap-6 md:grid-cols-2">
-          <ProfileSection initialProfile={completeProfile} />
+          <ProfileSection initialProfile={profile} />
 
-          <ProgressCard progress={sampleProgress} />
+          <ProgressCard progress={progress} />
         </div>
 
         <nav aria-labelledby="shortcuts-heading" className="mt-8">
