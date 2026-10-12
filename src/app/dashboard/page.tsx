@@ -1,10 +1,10 @@
 // Dashboard page shell — SCRUM-139 [S3-M2]
 // Uses fixture data until Member 1's current-user and Member 3's profile
-// services are merged. Profile editing comes next.
+// services are merged. Profile saves go through a temporary mock.
 
 import type { Metadata } from "next";
 import Link from "next/link";
-import ProfileCard from "@/components/ProfileCard";
+import ProfileSection from "@/components/ProfileSection";
 import ProgressCard from "@/components/ProgressCard";
 import SharedLayout from "@/components/SharedLayout";
 import { completeProfile, sampleProgress } from "@/lib/fixtures/dashboard";
@@ -26,7 +26,7 @@ export default function DashboardPage() {
         </p>
 
         <div className="mt-8 grid gap-6 md:grid-cols-2">
-          <ProfileCard profile={completeProfile} />
+          <ProfileSection initialProfile={completeProfile} />
 
           <ProgressCard progress={sampleProgress} />
         </div>
@@ -48,14 +48,12 @@ export default function DashboardPage() {
               </Link>
             </li>
             <li>
-              {/* No /portfolio route exists yet (Member 5). Swap this for a
-                  Link once the page is merged. */}
-              <span
-                aria-disabled="true"
-                className="inline-flex items-center rounded-md border border-slate-300 px-5 py-2.5 font-medium text-slate-400"
+              <Link
+                href="/portfolio"
+                className="inline-flex items-center rounded-md border border-teal-600 px-5 py-2.5 font-medium text-teal-700 transition-colors hover:bg-teal-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600"
               >
-                Portfolio (coming soon)
-              </span>
+                View portfolio
+              </Link>
             </li>
           </ul>
         </nav>
