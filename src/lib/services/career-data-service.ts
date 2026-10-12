@@ -12,6 +12,8 @@ import type {
     QuestionnaireRecord,
     RoadmapInput,
     RoadmapRecord,
+    ProfileInput,
+    ProfileRecord,
   } from "../persistence/domain";
   
   import type {
@@ -38,7 +40,40 @@ import type {
       private readonly currentUserProvider:
         CurrentUserProvider
     ) {}
-  
+      
+      /**
+ * Returns the profile owned by the current user.
+ *
+ * Returns null when the authenticated user has not saved a profile.
+ * Throws AuthenticationRequiredError when there is no valid current user.
+ */
+async getMyProfile():
+  Promise<ProfileRecord | null> {
+  const userId =
+    await this.requireCurrentUserId();
+
+  return this.repository.getProfile(
+    userId
+  );
+}
+
+/**
+ * Saves the current user's profile.
+ *
+ * The caller does not supply a user ID. Ownership is resolved from the
+ * current-user provider on every operation.
+ */
+async saveMyProfile(
+  input: ProfileInput
+): Promise<ProfileRecord> {
+  const userId =
+    await this.requireCurrentUserId();
+
+  return this.repository.saveProfile(
+    userId,
+    input
+  );
+}
     /**
      * Returns the questionnaire owned by the current user.
      *
