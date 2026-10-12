@@ -1,8 +1,12 @@
+import type { ReactNode } from "react";
+
 import type { ExperienceLevel } from "@/lib/persistence";
 import type { TemporaryDashboardProfile } from "@/types/dashboard";
 
 interface ProfileCardProps {
   profile: TemporaryDashboardProfile;
+  /** Optional actions or messages shown below the details. */
+  children?: ReactNode;
 }
 
 const experienceLabels: Record<ExperienceLevel, string> = {
@@ -17,7 +21,7 @@ const NOT_SET = "Not set yet";
  * Presentation-only profile summary. It receives profile data through
  * props and never fetches or saves anything itself.
  */
-export default function ProfileCard({ profile }: ProfileCardProps) {
+export default function ProfileCard({ profile, children }: ProfileCardProps) {
   const name = profile.name?.trim() || undefined;
   const targetRole = profile.targetRole?.trim() || undefined;
   const experience = profile.experienceLevel
@@ -47,6 +51,8 @@ export default function ProfileCard({ profile }: ProfileCardProps) {
           and experience level.
         </p>
       )}
+
+      {children}
     </section>
   );
 }
