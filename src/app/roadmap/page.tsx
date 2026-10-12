@@ -1,20 +1,18 @@
+
 import MilestoneCard from "@/components/MilestoneCard";
 import SharedLayout from "@/components/SharedLayout";
 import { mockRoadmap } from "@/lib/mockRoadmap";
+import { getRoadmapProgress } from "@/lib/roadmapProgress";
 import Link from "next/link";
 
 export default function RoadmapPage() {
-  const completedMilestones = mockRoadmap.milestones.filter(
-    (milestone) => milestone.status === "completed"
-  ).length;
+  // Sprint 3 - Member 4 (SCRUM-192)
+  // Reuse the shared progress calculation helper.
+  const { progressPercentage } = getRoadmapProgress(
+    mockRoadmap.milestones
+  );
 
-  const progressPercentage =
-    mockRoadmap.milestones.length === 0
-      ? 0
-      : Math.round(
-          (completedMilestones / mockRoadmap.milestones.length) * 100
-        );
-
+  // Keep milestones displayed in their intended order.
   const orderedMilestones = [...mockRoadmap.milestones].sort(
     (left, right) => left.order - right.order
   );
@@ -32,8 +30,8 @@ export default function RoadmapPage() {
           </h1>
 
           <p className="mt-3 text-slate-600">
-            Follow these milestones in order and use each step to build toward
-            your target role.
+            Follow these milestones in order and use each step to
+            build toward your target role.
           </p>
 
           <p className="mt-3 text-sm text-slate-600">
@@ -75,7 +73,10 @@ export default function RoadmapPage() {
         <div className="mt-8 space-y-6">
           {orderedMilestones.map((milestone) => (
             <MilestoneCard
-              key={milestone.id ?? `milestone-${milestone.order}`}
+              key={
+                milestone.id ??
+                `milestone-${milestone.order}`
+              }
               milestone={milestone}
               position={milestone.order}
             />
