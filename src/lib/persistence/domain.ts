@@ -52,6 +52,36 @@ export interface QuestionnaireRecord
   updatedAt: string;
 }
 
+/**
+ * Persistence-layer representation of a user's editable CareerLM profile.
+ *
+ * Fields are optional so CareerLM can safely persist partial profiles while
+ * the higher-level application profile contract continues to evolve.
+ *
+ * This type intentionally does not depend on dashboard/UI models.
+ */
+export interface ProfileInput {
+  name?: string;
+
+  targetRole?: string;
+
+  experienceLevel?: ExperienceLevel;
+}
+
+export interface ProfileRecord
+  extends ProfileInput {
+  userId: string;
+
+  /**
+   * Allows future migrations if the persisted profile structure changes.
+   */
+  schemaVersion: 1;
+
+  createdAt: string;
+
+  updatedAt: string;
+}
+
 export interface MilestoneInput {
   /**
    * Optional so the persistence layer can generate an ID.
@@ -105,7 +135,6 @@ export interface RoadmapRecord
  * Everything CareerLM currently persists for one user.
  *
  * Later sprints can extend this with:
- * - profile
  * - resume metadata
  * - portfolio information
  * - job preferences
@@ -113,6 +142,8 @@ export interface RoadmapRecord
  * without changing the repository consumer API unnecessarily.
  */
 export interface UserPersistenceState {
+  profile?: ProfileRecord;
+
   questionnaire?: QuestionnaireRecord;
 
   activeRoadmap?: RoadmapRecord;
