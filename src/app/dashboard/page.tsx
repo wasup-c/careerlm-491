@@ -1,21 +1,25 @@
 // Dashboard page shell — SCRUM-139 [S3-M2]
-// Target role and progress come from the current roadmap (the same source
-// as /roadmap) using Member 4's progress calculation. Name, experience
-// level, and profile saves stay mocked until Member 3's profile service exists.
+// Reads the current user's saved questionnaire and roadmap through
+// Member 1's CareerDataService (server-side only). Progress uses Member 4's
+// calculation. Profile saves stay mocked until the profile service exists.
 
 import type { Metadata } from "next";
 import Link from "next/link";
 import ProfileSection from "@/components/ProfileSection";
 import ProgressCard from "@/components/ProgressCard";
 import SharedLayout from "@/components/SharedLayout";
-import { getDashboardData } from "@/lib/dashboardData";
+import { loadDashboardData } from "@/lib/dashboardData";
+import { careerDataService } from "@/lib/services";
 
 export const metadata: Metadata = {
   title: "Dashboard | CareerLM",
 };
 
-export default function DashboardPage() {
-  const { profile, progress } = getDashboardData();
+// Saved data changes per request, so never prerender this page at build time.
+export const dynamic = "force-dynamic";
+
+export default async function DashboardPage() {
+  const { profile, progress } = await loadDashboardData(careerDataService);
 
   return (
     <SharedLayout>
