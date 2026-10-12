@@ -1,19 +1,26 @@
 // Dashboard page shell — SCRUM-139 [S3-M2]
-// Uses fixture data until Member 1's current-user and Member 3's profile
-// services are merged. Profile saves go through a temporary mock.
+// Reads the current user's saved questionnaire and roadmap through
+// Member 1's CareerDataService (server-side only). Progress uses Member 4's
+// calculation. Profile saves stay mocked until the profile service exists.
 
 import type { Metadata } from "next";
 import Link from "next/link";
 import ProfileSection from "@/components/ProfileSection";
 import ProgressCard from "@/components/ProgressCard";
 import SharedLayout from "@/components/SharedLayout";
-import { completeProfile, sampleProgress } from "@/lib/fixtures/dashboard";
+import { loadDashboardData } from "@/lib/dashboardData";
+import { careerDataService } from "@/lib/services";
 
 export const metadata: Metadata = {
   title: "Dashboard | CareerLM",
 };
 
-export default function DashboardPage() {
+// Saved data changes per request, so never prerender this page at build time.
+export const dynamic = "force-dynamic";
+
+export default async function DashboardPage() {
+  const { profile, progress } = await loadDashboardData(careerDataService);
+
   return (
     <SharedLayout>
       <div className="mx-auto w-full max-w-3xl">
@@ -26,9 +33,9 @@ export default function DashboardPage() {
         </p>
 
         <div className="mt-8 grid gap-6 md:grid-cols-2">
-          <ProfileSection initialProfile={completeProfile} />
+          <ProfileSection initialProfile={profile} />
 
-          <ProgressCard progress={sampleProgress} />
+          <ProgressCard progress={progress} />
         </div>
 
         <nav aria-labelledby="shortcuts-heading" className="mt-8">
