@@ -1,12 +1,13 @@
 // Dashboard page shell — SCRUM-139 [S3-M2]
 // Uses fixture data until Member 1's current-user and Member 3's profile
-// services are merged. Progress and profile editing come next.
+// services are merged. Profile editing comes next.
 
 import type { Metadata } from "next";
 import Link from "next/link";
 import ProfileCard from "@/components/ProfileCard";
+import ProgressCard from "@/components/ProgressCard";
 import SharedLayout from "@/components/SharedLayout";
-import { completeProfile } from "@/lib/fixtures/dashboard";
+import { completeProfile, sampleProgress } from "@/lib/fixtures/dashboard";
 
 export const metadata: Metadata = {
   title: "Dashboard | CareerLM",
@@ -27,20 +28,7 @@ export default function DashboardPage() {
         <div className="mt-8 grid gap-6 md:grid-cols-2">
           <ProfileCard profile={completeProfile} />
 
-          <section
-            aria-labelledby="progress-heading"
-            className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm"
-          >
-            <h2
-              id="progress-heading"
-              className="text-lg font-semibold text-slate-900"
-            >
-              Roadmap progress
-            </h2>
-            <p className="mt-2 text-slate-600">
-              Your roadmap progress will appear here.
-            </p>
-          </section>
+          <ProgressCard progress={sampleProgress} />
         </div>
 
         <nav aria-labelledby="shortcuts-heading" className="mt-8">
