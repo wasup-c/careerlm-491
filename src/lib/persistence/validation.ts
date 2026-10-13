@@ -2,6 +2,8 @@ import type {
     MilestoneInput,
     QuestionnaireInput,
     RoadmapInput,
+    ExperienceLevel,
+    ProfileInput,
   } from "./domain";
   
   import { PersistenceValidationError } from "./errors";
@@ -39,6 +41,87 @@ import type {
     return normalized;
   }
   
+  function normalizeOptionalProfileString(
+    value: string | undefined,
+    fieldName: string
+  ): string | undefined {
+    if (value === undefined) {
+      return undefined;
+    }
+  
+    if (typeof value !== "string") {
+      throw new PersistenceValidationError(
+        `${fieldName} must be a string.`
+      );
+    }
+  
+    const normalized =
+      value.trim();
+  
+    return normalized || undefined;
+  }
+  
+  /**
+   * Normalizes structurally valid profile data before persistence.
+   *
+   * Application/business validation remains outside the persistence layer.
+   */
+  export function normalizeProfile(
+    input: ProfileInput
+  ): ProfileInput {
+    const name =
+      normalizeOptionalProfileString(
+        input.name,
+        "Profile name"
+      );
+  
+    const targetRole =
+      normalizeOptionalProfileString(
+        input.targetRole,
+        "Profile target role"
+      );
+  
+    const allowedExperienceLevels =
+      new Set<ExperienceLevel>([
+        "beginner",
+        "intermediate",
+        "advanced",
+      ]);
+  
+    if (
+      input.experienceLevel !== undefined &&
+      !allowedExperienceLevels.has(
+        input.experienceLevel
+      )
+    ) {
+      throw new PersistenceValidationError(
+        "Profile experience level must be beginner, intermediate, or advanced."
+      );
+    }
+  
+    const normalized:
+      ProfileInput = {};
+  
+    if (name !== undefined) {
+      normalized.name = name;
+    }
+  
+    if (targetRole !== undefined) {
+      normalized.targetRole =
+        targetRole;
+    }
+  
+    if (
+      input.experienceLevel !==
+      undefined
+    ) {
+      normalized.experienceLevel =
+        input.experienceLevel;
+    }
+  
+    return normalized;
+  }
+
   export function normalizeQuestionnaire(
     input: QuestionnaireInput
   ): QuestionnaireInput {
