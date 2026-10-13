@@ -7,14 +7,13 @@ import {
 import { useRouter } from "next/navigation";
 
 import ErrorState from "@/components/ErrorState";
-import {
-  ONBOARDING_STORAGE_KEY,
-  isValidOnboardingAnswers,
-} from "@/lib/onboardingSession";
 
 type GenerationState =
   | "processing"
   | "failed";
+
+const GENERATED_ROADMAP_STORAGE_KEY =
+  "careerlm-generated-roadmap";
 
 const SERVER_SNAPSHOT = "__server__";
 
@@ -28,10 +27,10 @@ function subscribeToSessionStorage(
   };
 }
 
-function getOnboardingSnapshot() {
+function getGeneratedRoadmapSnapshot() {
   return (
     window.sessionStorage.getItem(
-      ONBOARDING_STORAGE_KEY,
+      GENERATED_ROADMAP_STORAGE_KEY,
     ) ?? ""
   );
 }
@@ -40,18 +39,22 @@ function getServerSnapshot() {
   return SERVER_SNAPSHOT;
 }
 
-function hasValidStoredAnswers(
-  storedAnswers: string,
+function hasValidGeneratedRoadmap(
+  storedRoadmap: string,
 ) {
-  if (!storedAnswers) {
+  if (!storedRoadmap) {
     return false;
   }
 
   try {
-    const parsedAnswers: unknown =
-      JSON.parse(storedAnswers);
+    const parsedRoadmap: unknown =
+      JSON.parse(storedRoadmap);
 
-    return isValidOnboardingAnswers(parsedAnswers);
+    return (
+      typeof parsedRoadmap === "object" &&
+      parsedRoadmap !== null &&
+      !Array.isArray(parsedRoadmap)
+    );
   } catch {
     return false;
   }
@@ -63,18 +66,18 @@ export default function GeneratingPage() {
   const [generationState, setGenerationState] =
     useState<GenerationState>("processing");
 
-  const storedAnswers = useSyncExternalStore(
+  const storedRoadmap = useSyncExternalStore(
     subscribeToSessionStorage,
-    getOnboardingSnapshot,
+    getGeneratedRoadmapSnapshot,
     getServerSnapshot,
   );
 
   const isChecking =
-    storedAnswers === SERVER_SNAPSHOT;
+    storedRoadmap === SERVER_SNAPSHOT;
 
-  const hasValidAnswers =
+  const hasGeneratedRoadmap =
     !isChecking &&
-    hasValidStoredAnswers(storedAnswers);
+    hasValidGeneratedRoadmap(storedRoadmap);
 
   function handleRetry() {
     setGenerationState("processing");
@@ -103,20 +106,19 @@ export default function GeneratingPage() {
           </h1>
 
           <p className="mt-4 text-gray-600">
-            CareerLM is checking your questionnaire
-            responses.
+            CareerLM is preparing your generated roadmap.
           </p>
         </div>
       </main>
     );
   }
 
-  if (!hasValidAnswers) {
+  if (!hasGeneratedRoadmap) {
     return (
       <main className="mx-auto max-w-2xl px-6 py-16">
         <ErrorState
-          title="Unable to Start Roadmap Generation"
-          message="Your questionnaire responses are missing or invalid. Please complete the questionnaire before generating a roadmap."
+          title="Unable to Continue Roadmap Generation"
+          message="Your generated roadmap is missing or invalid. Please return to the questionnaire and try again."
           onNavigate={handleReturnToQuestionnaire}
           navigationLabel="Return to Questionnaire"
         />

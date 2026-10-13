@@ -1,7 +1,4 @@
-import {
-  render,
-  screen,
-} from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {
   beforeEach,
@@ -11,10 +8,14 @@ import {
   vi,
 } from "vitest";
 
+import { mockRoadmap } from "@/lib/mockRoadmap";
+
 import GeneratingPage from "./page";
-import { ONBOARDING_STORAGE_KEY } from "@/lib/onboardingSession";
 
 const push = vi.fn();
+
+const GENERATED_ROADMAP_STORAGE_KEY =
+  "careerlm-generated-roadmap";
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({
@@ -22,37 +23,22 @@ vi.mock("next/navigation", () => ({
   }),
 }));
 
-const validAnswers = {
-  1: "Frontend Developer",
-  2: "Intermediate (some coursework/projects)",
-  3: "5-10 hours",
-  4: "3-6 months",
-  5: [
-    "Hands-on projects",
-    "Structured curriculum",
-  ],
-};
-
-function storeValidAnswers() {
-  sessionStorage.setItem(
-    ONBOARDING_STORAGE_KEY,
-    JSON.stringify(validAnswers),
-  );
-}
-
 describe("GeneratingPage", () => {
   beforeEach(() => {
     push.mockClear();
-    sessionStorage.clear();
+    window.sessionStorage.clear();
+
+    window.sessionStorage.setItem(
+      GENERATED_ROADMAP_STORAGE_KEY,
+      JSON.stringify(mockRoadmap),
+    );
   });
 
-  it("shows the processing state when valid onboarding answers exist", async () => {
-    storeValidAnswers();
-
+  it("shows the processing state when a generated roadmap is available", () => {
     render(<GeneratingPage />);
 
     expect(
-      await screen.findByRole("heading", {
+      screen.getByRole("heading", {
         name: "Generating Your Roadmap",
       }),
     ).toBeInTheDocument();
@@ -64,12 +50,14 @@ describe("GeneratingPage", () => {
     ).toBeInTheDocument();
   });
 
-  it("shows an error when onboarding answers are missing", async () => {
+  it("shows a recovery state when the generated roadmap handoff is missing", () => {
+    window.sessionStorage.clear();
+
     render(<GeneratingPage />);
 
     expect(
-      await screen.findByRole("heading", {
-        name: "Unable to Start Roadmap Generation",
+      screen.getByRole("heading", {
+        name: "Unable to Continue Roadmap Generation",
       }),
     ).toBeInTheDocument();
 
@@ -80,62 +68,13 @@ describe("GeneratingPage", () => {
     ).toBeInTheDocument();
   });
 
-  it("shows an error when stored onboarding data is malformed", async () => {
-    sessionStorage.setItem(
-      ONBOARDING_STORAGE_KEY,
-      "not-valid-json",
-    );
-
-    render(<GeneratingPage />);
-
-    expect(
-      await screen.findByRole("heading", {
-        name: "Unable to Start Roadmap Generation",
-      }),
-    ).toBeInTheDocument();
-  });
-
-  it("shows an error when onboarding answers are incomplete", async () => {
-    sessionStorage.setItem(
-      ONBOARDING_STORAGE_KEY,
-      JSON.stringify({
-        1: "Frontend Developer",
-        2: "Beginner (little to no experience)",
-      }),
-    );
-
-    render(<GeneratingPage />);
-
-    expect(
-      await screen.findByRole("heading", {
-        name: "Unable to Start Roadmap Generation",
-      }),
-    ).toBeInTheDocument();
-  });
-
-  it("returns the user to onboarding from an invalid state", async () => {
+  it("shows the failure state when generation fails", async () => {
     const user = userEvent.setup();
 
     render(<GeneratingPage />);
 
     await user.click(
-      await screen.findByRole("button", {
-        name: "Return to Questionnaire",
-      }),
-    );
-
-    expect(push).toHaveBeenCalledWith("/onboarding");
-  });
-
-  it("shows the generation failure state when generation fails", async () => {
-    const user = userEvent.setup();
-
-    storeValidAnswers();
-
-    render(<GeneratingPage />);
-
-    await user.click(
-      await screen.findByRole("button", {
+      screen.getByRole("button", {
         name: "Simulate Failure",
       }),
     );
@@ -145,17 +84,21 @@ describe("GeneratingPage", () => {
         name: "Unable to Generate Roadmap",
       }),
     ).toBeInTheDocument();
+
+    expect(
+      screen.queryByRole("heading", {
+        name: "Generating Your Roadmap",
+      }),
+    ).not.toBeInTheDocument();
   });
 
-  it("returns to processing after retrying a generation failure", async () => {
+  it("returns to processing after retrying a failure", async () => {
     const user = userEvent.setup();
-
-    storeValidAnswers();
 
     render(<GeneratingPage />);
 
     await user.click(
-      await screen.findByRole("button", {
+      screen.getByRole("button", {
         name: "Simulate Failure",
       }),
     );
@@ -167,21 +110,25 @@ describe("GeneratingPage", () => {
     );
 
     expect(
-      await screen.findByRole("heading", {
+      screen.getByRole("heading", {
         name: "Generating Your Roadmap",
       }),
     ).toBeInTheDocument();
+
+    expect(
+      screen.queryByRole("heading", {
+        name: "Unable to Generate Roadmap",
+      }),
+    ).not.toBeInTheDocument();
   });
 
   it("navigates to the roadmap after successful generation", async () => {
     const user = userEvent.setup();
 
-    storeValidAnswers();
-
     render(<GeneratingPage />);
 
     await user.click(
-      await screen.findByRole("button", {
+      screen.getByRole("button", {
         name: "Simulate Success",
       }),
     );
