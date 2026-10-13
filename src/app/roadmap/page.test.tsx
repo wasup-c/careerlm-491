@@ -83,7 +83,9 @@ describe("RoadmapPage regression tests", () => {
       level: 2,
     });
 
-    expect(headings.map((heading) => heading.textContent)).toEqual([
+    expect(
+      headings.map((heading) => heading.textContent)
+    ).toEqual([
       "First Milestone",
       "Second Milestone",
       "Third Milestone",
@@ -97,25 +99,19 @@ describe("RoadmapPage regression tests", () => {
       name: "Roadmap progress",
     });
 
-    expect(progressbar.getAttribute("aria-valuenow")).toBe("33");
-    expect(progressbar.getAttribute("aria-valuemin")).toBe("0");
-    expect(progressbar.getAttribute("aria-valuemax")).toBe("100");
-  });
+    expect(
+      progressbar.getAttribute("aria-valuenow")
+    ).toBe("33");
 
-  it("preserves the portfolio navigation link", () => {
-    render(<RoadmapPage />);
+    expect(
+      progressbar.getAttribute("aria-valuemin")
+    ).toBe("0");
 
-    const link = screen.getByRole("link", {
-      name: "View portfolio",
-    });
-
-    expect(link.getAttribute("href")).toBe("/portfolio");
+    expect(
+      progressbar.getAttribute("aria-valuemax")
+    ).toBe("100");
   });
 });
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
-
-import RoadmapPage from "./page";
 
 describe("RoadmapPage portfolio journey handoff", () => {
   it("provides a path from the roadmap to the portfolio", () => {
@@ -125,6 +121,9 @@ describe("RoadmapPage portfolio journey handoff", () => {
       name: /view portfolio/i,
     });
 
-    expect(portfolioLink).toHaveAttribute("href", "/portfolio");
+    expect(portfolioLink).toHaveAttribute(
+      "href",
+      "/portfolio"
+    );
   });
 });
