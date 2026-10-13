@@ -4,6 +4,8 @@ import type {
     QuestionnaireRecord,
     RoadmapInput,
     RoadmapRecord,
+    ProfileInput,
+    ProfileRecord,
   } from "./domain";
   
   /**
@@ -16,6 +18,15 @@ import type {
    * sprint without requiring every feature to be rewritten.
    */
   export interface CareerRepository {
+    saveProfile(
+      userId: string,
+      input: ProfileInput
+    ): Promise<ProfileRecord>;
+    
+    getProfile(
+      userId: string
+    ): Promise<ProfileRecord | null>;
+
     saveQuestionnaire(
       userId: string,
       input: QuestionnaireInput
