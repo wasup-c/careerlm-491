@@ -39,7 +39,7 @@ describe("ProgressCard", () => {
   it("treats a roadmap with zero milestones as empty", () => {
     render(
       <ProgressCard
-        progress={{ completedMilestones: 0, totalMilestones: 0, percentComplete: 0 }}
+        progress={{ completedMilestones: 0, totalMilestones: 0, progressPercentage: 0 }}
       />,
     );
     expect(screen.getByRole("link", { name: "Start onboarding" })).toBeInTheDocument();
@@ -48,7 +48,7 @@ describe("ProgressCard", () => {
   it("keeps out-of-range percentages inside 0–100", () => {
     render(
       <ProgressCard
-        progress={{ completedMilestones: 3, totalMilestones: 3, percentComplete: 140 }}
+        progress={{ completedMilestones: 3, totalMilestones: 3, progressPercentage: 140 }}
       />,
     );
     expect(screen.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "100");
