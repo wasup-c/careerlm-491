@@ -1,6 +1,48 @@
-import { generateRoadmap } from "@/lib/generateRoadmap";
-import { validateQuestionnaire } from "@/lib/validation/questionnaire";
-import type { GenerateRoadmapResponse } from "@/types/career";
+import {
+  generateRoadmap,
+} from "@/lib/generateRoadmap";
+
+import {
+  mapQuestionnaireToPersistence,
+} from "@/lib/integration/questionnaire-persistence-mapper";
+
+import {
+  careerDataService,
+} from "@/lib/services/default-career-data-service";
+
+import {
+  validateQuestionnaire,
+} from "@/lib/validation/questionnaire";
+
+import type {
+  GenerateRoadmapResponse,
+} from "@/types/career";
+
+/**
+ * Returns a controlled persistence failure without exposing filesystem,
+ * repository, session, or other infrastructure details to API callers.
+ */
+function createPersistenceFailureResponse():
+  Response {
+  const responseBody:
+    GenerateRoadmapResponse = {
+      success: false,
+      error: {
+        code:
+          "PERSISTENCE_FAILED",
+
+        message:
+          "CareerLM could not save your roadmap data. Please try again.",
+      },
+    };
+
+  return Response.json(
+    responseBody,
+    {
+      status: 500,
+    }
+  );
+}
 
 export async function POST(
   request: Request
@@ -9,64 +51,139 @@ export async function POST(
 
   // Parse incoming JSON safely.
   try {
-    body = await request.json();
+    body =
+      await request.json();
   } catch {
-    const responseBody: GenerateRoadmapResponse = {
-      success: false,
-      error: {
-        code: "VALIDATION_ERROR",
-        message: "Request body must contain valid JSON.",
-      },
-    };
+    const responseBody:
+      GenerateRoadmapResponse = {
+        success: false,
+        error: {
+          code:
+            "VALIDATION_ERROR",
 
-    return Response.json(responseBody, {
-      status: 400,
-    });
+          message:
+            "Request body must contain valid JSON.",
+        },
+      };
+
+    return Response.json(
+      responseBody,
+      {
+        status: 400,
+      }
+    );
   }
 
-  // Validate the questionnaire before any generation occurs.
-  const validation = validateQuestionnaire(body);
+  /**
+   * Member 3 validation remains the application/API validation boundary.
+   *
+   * Persistence receives only questionnaire data that has already passed
+   * the existing questionnaire contract.
+   */
+  const validation =
+    validateQuestionnaire(body);
 
   if (!validation.valid) {
-    const responseBody: GenerateRoadmapResponse = {
-      success: false,
-      error: {
-        code: "VALIDATION_ERROR",
-        message: "Questionnaire validation failed.",
-        fieldErrors: validation.fieldErrors,
-      },
-    };
+    const responseBody:
+      GenerateRoadmapResponse = {
+        success: false,
+        error: {
+          code:
+            "VALIDATION_ERROR",
 
-    return Response.json(responseBody, {
-      status: 400,
-    });
+          message:
+            "Questionnaire validation failed.",
+
+          fieldErrors:
+            validation.fieldErrors,
+        },
+      };
+
+    return Response.json(
+      responseBody,
+      {
+        status: 400,
+      }
+    );
   }
 
-  // Input is now validated and safe to pass to generation.
+  /**
+   * Persist the validated questionnaire through Member 1's session-aware
+   * data-access boundary.
+   *
+   * The API never selects a repository user ID directly.
+   */
   try {
-    const generationResult =
-      await generateRoadmap(validation.data);
+    const questionnaireInput =
+      mapQuestionnaireToPersistence(
+        validation.data
+      );
 
-    if (!generationResult.success) {
-      return Response.json(generationResult, {
-        status: 500,
-      });
-    }
-
-    return Response.json(generationResult, {
-      status: 200,
-    });
+    await careerDataService
+      .saveMyQuestionnaire(
+        questionnaireInput
+      );
   } catch {
-    const responseBody: GenerateRoadmapResponse = {
-      success: false,
-      error: {
-        code: "GENERATION_FAILED",
-        message: "Roadmap generation failed.",
-      },
-    };
-
-    return Response.json(responseBody, {
-      status: 500,
-    });
+    return createPersistenceFailureResponse();
   }
+
+  /**
+   * Generate the roadmap using the existing generation boundary.
+   */
+  let generationResult:
+    GenerateRoadmapResponse;
+
+  try {
+    generationResult =
+      await generateRoadmap(
+        validation.data
+      );
+  } catch {
+    const responseBody:
+      GenerateRoadmapResponse = {
+        success: false,
+        error: {
+          code:
+            "GENERATION_FAILED",
+
+          message:
+            "Roadmap generation failed.",
+        },
+      };
+
+    return Response.json(
+      responseBody,
+      {
+        status: 500,
+      }
+    );
+  }
+
+  if (!generationResult.success) {
+    return Response.json(
+      generationResult,
+      {
+        status: 500,
+      }
+    );
+  }
+
+  /**
+   * Persist the successfully generated roadmap for the same current user.
+   */
+  try {
+    await careerDataService
+      .createOrReplaceMyRoadmap(
+        generationResult.roadmap
+      );
+  } catch {
+    return createPersistenceFailureResponse();
+  }
+
+  return Response.json(
+    generationResult,
+    {
+      status: 200,
+    }
+  );
 }
