@@ -1,129 +1,361 @@
+import {
+  render,
+  screen,
+} from "@testing-library/react";
 
-import { describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
-import type { ReactNode } from "react";
-import type { CareerRoadmap } from "@/types/career";
+import {
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest";
 
-const mocks = vi.hoisted(() => ({
-  roadmap: {
-    title: "Test Career Roadmap",
-    targetRole: "Software Engineer",
-    estimatedWeeks: 12,
-    milestones: [
-      {
-        id: "third",
-        order: 3,
-        title: "Third Milestone",
-        description: "Third milestone description",
-        estimatedHours: 8,
-        skills: ["React"],
-        status: "not-started",
-      },
-      {
-        id: "first",
-        order: 1,
-        title: "First Milestone",
-        description: "First milestone description",
-        estimatedHours: 5,
-        skills: ["HTML"],
-        status: "completed",
-      },
-      {
-        id: "second",
-        order: 2,
-        title: "Second Milestone",
-        description: "Second milestone description",
-        estimatedHours: 6,
-        skills: ["TypeScript"],
-        status: "in-progress",
-      },
-    ],
-  } satisfies CareerRoadmap,
-}));
+import type {
+  ReactNode,
+} from "react";
 
-vi.mock("@/lib/mockRoadmap", () => ({
-  mockRoadmap: mocks.roadmap,
-}));
+import type {
+  RoadmapRecord,
+} from "@/lib/persistence/domain";
 
-vi.mock("@/components/SharedLayout", () => ({
-  default: ({ children }: { children: ReactNode }) => (
-    <div>{children}</div>
-  ),
-}));
+const mocks =
+  vi.hoisted(() => ({
+    getMyRoadmap:
+      vi.fn(),
+  }));
 
-vi.mock("next/link", () => ({
-  default: ({
-    children,
-    href,
-  }: {
-    children: ReactNode;
-    href: string;
-  }) => <a href={href}>{children}</a>,
-}));
+vi.mock(
+  "@/lib/services/default-career-data-service",
+  () => ({
+    careerDataService: {
+      getMyRoadmap:
+        mocks.getMyRoadmap,
+    },
+  })
+);
+
+vi.mock(
+  "@/components/SharedLayout",
+  () => ({
+    default: ({
+      children,
+    }: {
+      children:
+        ReactNode;
+    }) => (
+      <div>
+        {children}
+      </div>
+    ),
+  })
+);
+
+vi.mock(
+  "next/link",
+  () => ({
+    default: ({
+      children,
+      href,
+    }: {
+      children:
+        ReactNode;
+      href:
+        string;
+    }) => (
+      <a href={href}>
+        {children}
+      </a>
+    ),
+  })
+);
 
 import RoadmapPage from "./page";
 
-describe("RoadmapPage regression tests", () => {
-  it("renders the target role and estimated duration", () => {
-    render(<RoadmapPage />);
+const persistedRoadmap:
+  RoadmapRecord = {
+    id:
+      "roadmap-user-a",
 
-    expect(
-      screen.getByRole("heading", {
-        name: "Your path to Software Engineer",
-      })
-    ).toBeDefined();
+    userId:
+      "user-a",
 
-    expect(screen.getByText("12 weeks")).toBeDefined();
-  });
+    title:
+      "Test Career Roadmap",
 
-  it("renders milestones in ascending order", () => {
-    render(<RoadmapPage />);
+    targetRole:
+      "Software Engineer",
 
-    const headings = screen.getAllByRole("heading", {
-      level: 2,
+    estimatedWeeks: 12,
+
+    createdAt:
+      "2026-10-17T12:00:00.000Z",
+
+    updatedAt:
+      "2026-10-17T12:00:00.000Z",
+
+    milestones: [
+      {
+        id:
+          "third",
+
+        order: 3,
+
+        title:
+          "Third Milestone",
+
+        description:
+          "Third milestone description",
+
+        estimatedHours: 8,
+
+        skills: [
+          "React",
+        ],
+
+        status:
+          "not-started",
+      },
+
+      {
+        id:
+          "first",
+
+        order: 1,
+
+        title:
+          "First Milestone",
+
+        description:
+          "First milestone description",
+
+        estimatedHours: 5,
+
+        skills: [
+          "HTML",
+        ],
+
+        status:
+          "completed",
+      },
+
+      {
+        id:
+          "second",
+
+        order: 2,
+
+        title:
+          "Second Milestone",
+
+        description:
+          "Second milestone description",
+
+        estimatedHours: 6,
+
+        skills: [
+          "TypeScript",
+        ],
+
+        status:
+          "in-progress",
+      },
+    ],
+  };
+
+async function renderRoadmapPage() {
+  const page =
+    await RoadmapPage();
+
+  render(page);
+}
+
+describe(
+  "RoadmapPage regression tests",
+  () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+
+      mocks.getMyRoadmap
+        .mockResolvedValue(
+          persistedRoadmap
+        );
     });
 
-    expect(
-      headings.map((heading) => heading.textContent)
-    ).toEqual([
-      "First Milestone",
-      "Second Milestone",
-      "Third Milestone",
-    ]);
-  });
+    it(
+      "loads the current user's persisted roadmap through CareerDataService",
+      async () => {
+        await renderRoadmapPage();
 
-  it("renders progress based on completed milestones", () => {
-    render(<RoadmapPage />);
-
-    const progressbar = screen.getByRole("progressbar", {
-      name: "Roadmap progress",
-    });
-
-    expect(
-      progressbar.getAttribute("aria-valuenow")
-    ).toBe("33");
-
-    expect(
-      progressbar.getAttribute("aria-valuemin")
-    ).toBe("0");
-
-    expect(
-      progressbar.getAttribute("aria-valuemax")
-    ).toBe("100");
-  });
-});
-
-describe("RoadmapPage portfolio journey handoff", () => {
-  it("provides a path from the roadmap to the portfolio", () => {
-    render(<RoadmapPage />);
-
-    const portfolioLink = screen.getByRole("link", {
-      name: /view portfolio/i,
-    });
-
-    expect(portfolioLink).toHaveAttribute(
-      "href",
-      "/portfolio"
+        expect(
+          mocks.getMyRoadmap
+        ).toHaveBeenCalledTimes(
+          1
+        );
+      }
     );
-  });
-});
+
+    it(
+      "renders the target role and estimated duration",
+      async () => {
+        await renderRoadmapPage();
+
+        expect(
+          screen.getByRole(
+            "heading",
+            {
+              name:
+                "Your path to Software Engineer",
+            }
+          )
+        ).toBeDefined();
+
+        expect(
+          screen.getByText(
+            "12 weeks"
+          )
+        ).toBeDefined();
+      }
+    );
+
+    it(
+      "renders milestones in ascending order",
+      async () => {
+        await renderRoadmapPage();
+
+        const headings =
+          screen.getAllByRole(
+            "heading",
+            {
+              level: 2,
+            }
+          );
+
+        expect(
+          headings.map(
+            (
+              heading
+            ) =>
+              heading.textContent
+          )
+        ).toEqual([
+          "First Milestone",
+          "Second Milestone",
+          "Third Milestone",
+        ]);
+      }
+    );
+
+    it(
+      "renders progress based on completed milestones",
+      async () => {
+        await renderRoadmapPage();
+
+        const progressbar =
+          screen.getByRole(
+            "progressbar",
+            {
+              name:
+                "Roadmap progress",
+            }
+          );
+
+        expect(
+          progressbar.getAttribute(
+            "aria-valuenow"
+          )
+        ).toBe(
+          "33"
+        );
+
+        expect(
+          progressbar.getAttribute(
+            "aria-valuemin"
+          )
+        ).toBe(
+          "0"
+        );
+
+        expect(
+          progressbar.getAttribute(
+            "aria-valuemax"
+          )
+        ).toBe(
+          "100"
+        );
+      }
+    );
+
+    it(
+      "renders an onboarding empty state when no persisted roadmap exists",
+      async () => {
+        mocks.getMyRoadmap
+          .mockResolvedValueOnce(
+            null
+          );
+
+        await renderRoadmapPage();
+
+        expect(
+          screen.getByRole(
+            "heading",
+            {
+              name:
+                /no roadmap yet/i,
+            }
+          )
+        ).toBeDefined();
+
+        expect(
+          screen.getByRole(
+            "link",
+            {
+              name:
+                /start onboarding/i,
+            }
+          )
+        ).toHaveAttribute(
+          "href",
+          "/onboarding"
+        );
+      }
+    );
+  }
+);
+
+describe(
+  "RoadmapPage portfolio journey handoff",
+  () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+
+      mocks.getMyRoadmap
+        .mockResolvedValue(
+          persistedRoadmap
+        );
+    });
+
+    it(
+      "provides a path from the roadmap to the portfolio",
+      async () => {
+        await renderRoadmapPage();
+
+        const portfolioLink =
+          screen.getByRole(
+            "link",
+            {
+              name:
+                /view portfolio/i,
+            }
+          );
+
+        expect(
+          portfolioLink
+        ).toHaveAttribute(
+          "href",
+          "/portfolio"
+        );
+      }
+    );
+  }
+);

@@ -7,12 +7,36 @@ import type {
 } from "@/types/career";
 
 const mocks = vi.hoisted(() => ({
-  generateRoadmap: vi.fn(),
+  generateRoadmap:
+    vi.fn(),
+
+  saveMyQuestionnaire:
+    vi.fn(),
+
+  createOrReplaceMyRoadmap:
+    vi.fn(),
 }));
 
-vi.mock("@/lib/generateRoadmap", () => ({
-  generateRoadmap: mocks.generateRoadmap,
-}));
+vi.mock(
+  "@/lib/generateRoadmap",
+  () => ({
+    generateRoadmap:
+      mocks.generateRoadmap,
+  })
+);
+
+vi.mock(
+  "@/lib/services/default-career-data-service",
+  () => ({
+    careerDataService: {
+      saveMyQuestionnaire:
+        mocks.saveMyQuestionnaire,
+
+      createOrReplaceMyRoadmap:
+        mocks.createOrReplaceMyRoadmap,
+    },
+  })
+);
 
 
 const validQuestionnaire: QuestionnaireResponse = {
@@ -49,10 +73,19 @@ async function callRoute(body: unknown) {
   };
 }
 
-describe("POST /api/roadmap", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
+beforeEach(() => {
+  vi.clearAllMocks();
+
+  mocks.saveMyQuestionnaire
+    .mockResolvedValue(
+      undefined
+    );
+
+  mocks.createOrReplaceMyRoadmap
+    .mockResolvedValue(
+      undefined
+    );
+});
 
   describe("questionnaire validation", () => {
     it.each([
@@ -285,5 +318,241 @@ describe("POST /api/roadmap", () => {
         "Sensitive internal generation failure"
       );
     });
+    describe(
+      "persistence integration",
+      () => {
+        it(
+          "persists the validated questionnaire through CareerDataService",
+          async () => {
+            mocks.generateRoadmap
+              .mockReturnValue({
+                success: true,
+                roadmap:
+                  generatedRoadmap,
+              });
+
+            const {
+              response,
+            } =
+              await callRoute(
+                validQuestionnaire
+              );
+
+            expect(
+              response.status
+            ).toBe(200);
+
+            expect(
+              mocks.saveMyQuestionnaire
+            ).toHaveBeenCalledTimes(
+              1
+            );
+
+            expect(
+              mocks.saveMyQuestionnaire
+            ).toHaveBeenCalledWith({
+              targetRole:
+                "Software Engineer",
+
+              experienceLevel:
+                "beginner",
+
+              existingSkills: [],
+
+              learningStyle:
+                "Hands-on projects",
+
+              weeklyHours: 8,
+
+              additionalResponses: {
+                targetTimeline:
+                  "3-6 months",
+
+                weeklyTimeCommitment:
+                  "5-10 hours",
+
+                preferredLearningStyle: [
+                  "Hands-on projects",
+                ],
+
+                sourceExperienceLevel:
+                  "Beginner (little to no experience)",
+              },
+            });
+          }
+        );
+
+        it(
+          "persists the generated roadmap through CareerDataService",
+          async () => {
+            mocks.generateRoadmap
+              .mockReturnValue({
+                success: true,
+                roadmap:
+                  generatedRoadmap,
+              });
+
+            const {
+              response,
+            } =
+              await callRoute(
+                validQuestionnaire
+              );
+
+            expect(
+              response.status
+            ).toBe(200);
+
+            expect(
+              mocks.createOrReplaceMyRoadmap
+            ).toHaveBeenCalledTimes(
+              1
+            );
+
+            expect(
+              mocks.createOrReplaceMyRoadmap
+            ).toHaveBeenCalledWith(
+              generatedRoadmap
+            );
+          }
+        );
+
+        it(
+          "does not generate a roadmap when questionnaire persistence fails",
+          async () => {
+            mocks.saveMyQuestionnaire
+              .mockRejectedValueOnce(
+                new Error(
+                  "Sensitive filesystem failure"
+                )
+              );
+
+            const {
+              response,
+              body,
+            } =
+              await callRoute(
+                validQuestionnaire
+              );
+
+            expect(
+              response.status
+            ).toBe(500);
+
+            expect(body).toEqual({
+              success: false,
+              error: {
+                code:
+                  "PERSISTENCE_FAILED",
+
+                message:
+                  "CareerLM could not save your roadmap data. Please try again.",
+              },
+            });
+
+            expect(
+              mocks.generateRoadmap
+            ).not.toHaveBeenCalled();
+
+            expect(
+              mocks.createOrReplaceMyRoadmap
+            ).not.toHaveBeenCalled();
+
+            expect(
+              JSON.stringify(body)
+            ).not.toContain(
+              "Sensitive filesystem failure"
+            );
+          }
+        );
+
+        it(
+          "returns a controlled persistence error when roadmap persistence fails",
+          async () => {
+            mocks.generateRoadmap
+              .mockReturnValue({
+                success: true,
+                roadmap:
+                  generatedRoadmap,
+              });
+
+            mocks.createOrReplaceMyRoadmap
+              .mockRejectedValueOnce(
+                new Error(
+                  "Sensitive roadmap storage failure"
+                )
+              );
+
+            const {
+              response,
+              body,
+            } =
+              await callRoute(
+                validQuestionnaire
+              );
+
+            expect(
+              response.status
+            ).toBe(500);
+
+            expect(body).toEqual({
+              success: false,
+              error: {
+                code:
+                  "PERSISTENCE_FAILED",
+
+                message:
+                  "CareerLM could not save your roadmap data. Please try again.",
+              },
+            });
+
+            expect(
+              mocks.saveMyQuestionnaire
+            ).toHaveBeenCalledTimes(
+              1
+            );
+
+            expect(
+              mocks.generateRoadmap
+            ).toHaveBeenCalledTimes(
+              1
+            );
+
+            expect(
+              JSON.stringify(body)
+            ).not.toContain(
+              "Sensitive roadmap storage failure"
+            );
+          }
+        );
+
+        it(
+          "does not persist anything when questionnaire validation fails",
+          async () => {
+            const {
+              response,
+            } =
+              await callRoute({
+                ...validQuestionnaire,
+
+                targetCareerRole:
+                  "",
+              });
+
+            expect(
+              response.status
+            ).toBe(400);
+
+            expect(
+              mocks.saveMyQuestionnaire
+            ).not.toHaveBeenCalled();
+
+            expect(
+              mocks.createOrReplaceMyRoadmap
+            ).not.toHaveBeenCalled();
+          }
+        );
+      }
+    );
   });
-});
+;
