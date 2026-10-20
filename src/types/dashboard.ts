@@ -15,15 +15,4 @@ export interface TemporaryDashboardProfile {
   targetRole?: string;
   experienceLevel?: ExperienceLevel;
 }
-
-/**
- * TEMPORARY Sprint 3 progress view model.
- *
- * The dashboard only displays these values. Calculating them from a
- * RoadmapRecord is owned by Member 4.
- */
-export interface TemporaryRoadmapProgress {
-  completedMilestones: number;
-  totalMilestones: number;
-  percentComplete: number;
-}
+  

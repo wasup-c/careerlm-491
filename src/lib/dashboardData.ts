@@ -1,14 +1,14 @@
 import type { CareerDataService } from "@/lib/services";
 import type { QuestionnaireRecord } from "@/lib/persistence";
-import { getRoadmapProgress } from "@/lib/roadmapProgress";
-import type {
-  TemporaryDashboardProfile,
-  TemporaryRoadmapProgress,
-} from "@/types/dashboard";
+import {
+  getRoadmapProgress,
+  type RoadmapProgress,
+} from "@/lib/roadmapProgress";
+import type { TemporaryDashboardProfile } from "@/types/dashboard";
 
 export interface DashboardData {
   profile: TemporaryDashboardProfile;
-  progress: TemporaryRoadmapProgress | null;
+  progress: RoadmapProgress | null;
 }
 
 /** Any roadmap with milestones: a saved RoadmapRecord or a generated roadmap. */
@@ -17,22 +17,13 @@ type DashboardRoadmap = {
 };
 
 /**
- * Converts Member 4's progress result into the dashboard's progress shape.
- * The calculation itself stays in getRoadmapProgress (Member 4).
+ * Returns Member 4's shared RoadmapProgress for a roadmap, or null when the
+ * user has no roadmap. The calculation itself stays in getRoadmapProgress.
  */
 export function toDashboardProgress(
   roadmap: DashboardRoadmap | null,
-): TemporaryRoadmapProgress | null {
-  if (!roadmap) return null;
-
-  const { completedMilestones, totalMilestones, progressPercentage } =
-    getRoadmapProgress(roadmap.milestones);
-
-  return {
-    completedMilestones,
-    totalMilestones,
-    percentComplete: progressPercentage,
-  };
+): RoadmapProgress | null {
+  return roadmap ? getRoadmapProgress(roadmap.milestones) : null;
 }
 
 /**

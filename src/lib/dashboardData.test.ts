@@ -31,11 +31,11 @@ function createService() {
 }
 
 describe("toDashboardProgress", () => {
-  it("maps Member 4's progress result into the dashboard shape", () => {
+  it("returns Member 4's RoadmapProgress unchanged", () => {
     expect(toDashboardProgress(mockRoadmap)).toEqual({
       completedMilestones: 1,
       totalMilestones: 3,
-      percentComplete: 33,
+      progressPercentage: 33,
     });
   });
 
@@ -47,7 +47,7 @@ describe("toDashboardProgress", () => {
     expect(toDashboardProgress({ milestones: [] })).toEqual({
       completedMilestones: 0,
       totalMilestones: 0,
-      percentComplete: 0,
+      progressPercentage: 0,
     });
   });
 });
@@ -73,7 +73,7 @@ describe("loadDashboardData", () => {
 
     await expect(loadDashboardData(service)).resolves.toEqual({
       profile: { targetRole: "Frontend Developer", experienceLevel: "beginner" },
-      progress: { completedMilestones: 1, totalMilestones: 3, percentComplete: 33 },
+      progress: { completedMilestones: 1, totalMilestones: 3, progressPercentage: 33 },
     });
   });
 

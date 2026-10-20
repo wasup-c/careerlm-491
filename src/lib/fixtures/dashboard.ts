@@ -1,7 +1,5 @@
-import type {
-  TemporaryDashboardProfile,
-  TemporaryRoadmapProgress,
-} from "@/types/dashboard";
+import type { RoadmapProgress } from "@/lib/roadmapProgress";
+import type { TemporaryDashboardProfile } from "@/types/dashboard";
 
 /**
  * Contract-compatible fixture data for building and testing the
@@ -19,8 +17,8 @@ export const partialProfile: TemporaryDashboardProfile = {
 
 export const emptyProfile: TemporaryDashboardProfile = {};
 
-export const sampleProgress: TemporaryRoadmapProgress = {
+export const sampleProgress: RoadmapProgress = {
   completedMilestones: 1,
   totalMilestones: 3,
-  percentComplete: 33,
+  progressPercentage: 33,
 };

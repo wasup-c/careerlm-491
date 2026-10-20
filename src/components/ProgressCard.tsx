@@ -1,9 +1,9 @@
 import Link from "next/link";
-import type { TemporaryRoadmapProgress } from "@/types/dashboard";
+import type { RoadmapProgress } from "@/lib/roadmapProgress";
 
 interface ProgressCardProps {
   /** null means the user has no roadmap yet. */
-  progress: TemporaryRoadmapProgress | null;
+  progress: RoadmapProgress | null;
 }
 
 /**
@@ -17,7 +17,7 @@ export default function ProgressCard({ progress }: ProgressCardProps) {
 
   // Keep the bar inside 0–100 so unexpected input can't break the layout.
   const percent = hasRoadmap
-    ? Math.min(100, Math.max(0, progress.percentComplete))
+    ? Math.min(100, Math.max(0, progress.progressPercentage))
     : 0;
 
   return (

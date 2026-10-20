@@ -3,7 +3,10 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
 const refresh = vi.fn();
-vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh }) }));
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ refresh }),
+  usePathname: () => "/dashboard",
+}));
 
 import DashboardError from "./error";
 
