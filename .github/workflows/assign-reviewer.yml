@@ -22,11 +22,11 @@ jobs:
             const author = context.payload.pull_request.user.login;
 
             const reviewerMap = {
-              "wasup-c": "jasev24",
-              "SeatedGamer": "wasup-c",
-              "adriancancode": "SeatedGamer",
-              "david15tran": "adriancancode",
-              "jasev24": "david15tran"
+              "wasup-c": "jasev24", "SeatedGamer", "adriancancode", "david15tran",
+              "SeatedGamer": "wasup-c", "jasev24", "adriancancode", "david15tran",
+              "adriancancode": "SeatedGamer", "david15tran", "wasup-c", "jasev24",
+              "david15tran": "adriancancode", "jasev24", "SeatedGamer", "wasup-c",
+              "jasev24": "david15tran", "wasup-c", "adriancancode", "SeatedGamer",
             };
 
             const reviewer = reviewerMap[author];
