@@ -15,37 +15,42 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Request assigned reviewer
+      - name: Request assigned reviewers
         uses: actions/github-script@v7
         with:
           script: |
+            // Get the GitHub username of the PR author
             const author = context.payload.pull_request.user.login;
 
-            const reviewerMap = {
-              "wasup-c": "jasev24", "SeatedGamer", "adriancancode", "david15tran",
-              "SeatedGamer": "wasup-c", "jasev24", "adriancancode", "david15tran",
-              "adriancancode": "SeatedGamer", "david15tran", "wasup-c", "jasev24",
-              "david15tran": "adriancancode", "jasev24", "SeatedGamer", "wasup-c",
-              "jasev24": "david15tran", "wasup-c", "adriancancode", "SeatedGamer",
-            };
+            // List of all team members
+            const teamMembers = [
+              "wasup-c",
+              "SeatedGamer",
+              "adriancancode",
+              "david15tran",
+              "jasev24"
+            ];
 
-            const reviewer = reviewerMap[author];
+            // Select everyone except the PR author
+            const reviewers = teamMembers.filter(
+              member => member.toLowerCase() !== author.toLowerCase()
+            );
 
-            if (!reviewer) {
-              core.notice(`No reviewer configured for ${author}`);
+            // Check if there are reviewers available
+            if (reviewers.length === 0) {
+              core.notice(`No reviewers available for ${author}`);
               return;
             }
 
-            if (author === reviewer) {
-              core.setFailed(`PR author ${author} cannot review their own pull request.`);
-              return;
-            }
-
+            // Request reviews from all eligible team members
             await github.rest.pulls.requestReviewers({
               owner: context.repo.owner,
               repo: context.repo.repo,
               pull_number: context.issue.number,
-              reviewers: [reviewer]
+              reviewers: reviewers
             });
 
-            core.notice(`Requested review from ${reviewer} for PR opened by ${author}`);
+            // Log the assigned reviewers
+            core.notice(
+              `Requested reviews from ${reviewers.join(", ")} for PR opened by ${author}`
+            );
