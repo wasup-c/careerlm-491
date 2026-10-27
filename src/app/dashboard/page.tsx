@@ -1,13 +1,15 @@
 // Dashboard page shell — SCRUM-139 [S3-M2]
 // Reads the current user's saved questionnaire and roadmap through
 // Member 1's CareerDataService (server-side only). Progress uses Member 4's
-// calculation. Profile saves stay mocked until the profile service exists.
+// calculation. Profile saves go through a server action that saves the
+// current user's profile (SCRUM-226, CC6.1).
 
 import type { Metadata } from "next";
 import Link from "next/link";
 import ProfileSection from "@/components/ProfileSection";
 import ProgressCard from "@/components/ProgressCard";
 import SharedLayout from "@/components/SharedLayout";
+import { saveProfileAction } from "./actions";
 import { loadDashboardData } from "@/lib/dashboardData";
 import { careerDataService } from "@/lib/services";
 
@@ -33,7 +35,7 @@ export default async function DashboardPage() {
         </p>
 
         <div className="mt-8 grid gap-6 md:grid-cols-2">
-          <ProfileSection initialProfile={profile} />
+          <ProfileSection initialProfile={profile} onSave={saveProfileAction} />
 
           <ProgressCard progress={progress} />
         </div>
