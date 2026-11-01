@@ -136,4 +136,35 @@ describe("GeneratingPage", () => {
     expect(push).toHaveBeenCalledTimes(1);
     expect(push).toHaveBeenCalledWith("/roadmap");
   });
+
+  it("recovers safely from malformed generated-roadmap data", async () => {
+    const user = userEvent.setup();
+
+    window.sessionStorage.setItem(
+      GENERATED_ROADMAP_STORAGE_KEY,
+      "{invalid-json",
+    );
+
+    render(<GeneratingPage />);
+
+    expect(
+      screen.getByRole("heading", {
+        name: "Unable to Continue Roadmap Generation",
+      }),
+    ).toBeInTheDocument();
+
+    expect(
+      screen.queryByRole("button", {
+        name: "Simulate Success",
+      }),
+    ).not.toBeInTheDocument();
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "Return to Questionnaire",
+      }),
+    );
+
+    expect(push).toHaveBeenCalledWith("/onboarding");
+  });
 });
