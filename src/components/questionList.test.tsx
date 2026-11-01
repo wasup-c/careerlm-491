@@ -13,6 +13,8 @@ import {
   vi,
 } from "vitest";
 
+import { mockRoadmap } from "@/lib/mockRoadmap";
+
 const pushMock = vi.fn();
 const fetchMock = vi.fn();
 
@@ -764,5 +766,70 @@ describe(
         );
       }
     );
+
+    
+    it("recovers from a network failure and allows successful resubmission", async () => {
+      const user = userEvent.setup();
+
+      // First request fails; second request succeeds.
+      fetchMock
+        .mockRejectedValueOnce(
+          new Error("Network connection failed"),
+        )
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            success: true,
+            roadmap: mockRoadmap,
+          }),
+        });
+
+      render(<QuestionsList />);
+
+      // Complete the questionnaire.
+      await answerEveryQuestion(user);
+
+      const submitButton = screen.getByRole("button", {
+        name: SUBMIT_BUTTON_NAME,
+      });
+
+      // First submission: network failure.
+      await user.click(submitButton);
+
+      expect(
+        await screen.findByRole("alert"),
+      ).toHaveTextContent(
+        /unable to reach careerlm right now/i,
+      );
+
+      // Failed generation must not navigate.
+      expect(pushMock).not.toHaveBeenCalled();
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+
+      // Questionnaire answers should be preserved.
+      expect(
+        within(getQuestionGroup(/^1\./)).getByRole("textbox"),
+      ).toHaveValue("Frontend Engineer");
+
+      // Submission should become available again.
+      await waitFor(() => {
+        expect(submitButton).toBeEnabled();
+      });
+
+      // Second submission: successful response.
+      await user.click(submitButton);
+
+      await waitFor(() => {
+        expect(pushMock).toHaveBeenCalledWith("/roadmap");
+      });
+
+      // Verify that two requests occurred.
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+
+      // Previous error should be cleared.
+      expect(
+        screen.queryByRole("alert"),
+      ).not.toBeInTheDocument();
+    });
   }
 );
