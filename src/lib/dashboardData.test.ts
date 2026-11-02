@@ -79,6 +79,7 @@ describe("loadDashboardData", () => {
 
   it("passes service errors through to the dashboard error boundary", async () => {
     const service = {
+      getMyProfile: vi.fn().mockResolvedValue(null),
       getMyQuestionnaire: vi.fn().mockRejectedValue(new Error("storage down")),
       getMyRoadmap: vi.fn().mockResolvedValue(null),
     };

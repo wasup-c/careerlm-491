@@ -1,5 +1,5 @@
 import type { CareerDataService } from "@/lib/services";
-import type { QuestionnaireRecord } from "@/lib/persistence";
+import type { ProfileRecord, QuestionnaireRecord } from "@/lib/persistence";
 import {
   getRoadmapProgress,
   type RoadmapProgress,
@@ -27,39 +27,50 @@ export function toDashboardProgress(
 }
 
 /**
- * Maps the saved questionnaire into the dashboard profile.
+ * Builds the dashboard profile for the current user.
  *
- * The questionnaire has no name field, so name stays unset ("Not set yet")
- * until the profile owner adds one to the shared profile contract.
+ * SCRUM-231 [S4-M2-SEC-7] (CC6.1 finding F2): a profile the user saved from
+ * the dashboard wins. Any field the saved profile leaves empty falls back to
+ * the questionnaire, so new users still see their onboarding answers.
  */
 export function toDashboardProfile(
   questionnaire: QuestionnaireRecord | null,
+  savedProfile: ProfileRecord | null = null,
 ): TemporaryDashboardProfile {
-  if (!questionnaire) return {};
-
-  return {
-    targetRole: questionnaire.targetRole,
-    experienceLevel: questionnaire.experienceLevel,
+  const profile: TemporaryDashboardProfile = {
+    name: savedProfile?.name,
+    targetRole: savedProfile?.targetRole ?? questionnaire?.targetRole,
+    experienceLevel:
+      savedProfile?.experienceLevel ?? questionnaire?.experienceLevel,
   };
+
+  // Leave unset fields out so the cards show "Not set yet".
+  return Object.fromEntries(
+    Object.entries(profile).filter(([, value]) => value !== undefined),
+  ) as TemporaryDashboardProfile;
 }
 
 /**
- * Reads the current user's saved questionnaire and roadmap through
+ * Reads the current user's saved profile, questionnaire, and roadmap through
  * Member 1's CareerDataService.
  *
  * Server-only: the service reads the server-side repository, so call this
  * from a server component, never from a client component.
  */
 export async function loadDashboardData(
-  service: Pick<CareerDataService, "getMyQuestionnaire" | "getMyRoadmap">,
+  service: Pick<
+    CareerDataService,
+    "getMyProfile" | "getMyQuestionnaire" | "getMyRoadmap"
+  >,
 ): Promise<DashboardData> {
-  const [questionnaire, roadmap] = await Promise.all([
+  const [savedProfile, questionnaire, roadmap] = await Promise.all([
+    service.getMyProfile(),
     service.getMyQuestionnaire(),
     service.getMyRoadmap(),
   ]);
 
   return {
-    profile: toDashboardProfile(questionnaire),
+    profile: toDashboardProfile(questionnaire, savedProfile),
     progress: toDashboardProgress(roadmap),
   };
 }
