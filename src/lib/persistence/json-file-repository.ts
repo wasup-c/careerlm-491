@@ -1,5 +1,14 @@
-import { randomUUID } from "node:crypto";
-import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
+import {
+  randomUUID,
+} from "node:crypto";
+
+import {
+  mkdir,
+  readFile,
+  rename,
+  writeFile,
+} from "node:fs/promises";
+
 import path from "node:path";
 
 import type {
@@ -12,6 +21,8 @@ import type {
   RoadmapRecord,
   ProfileInput,
   ProfileRecord,
+  ResumeInput,
+  ResumeRecord,
 } from "./domain";
 
 import {
@@ -29,10 +40,11 @@ import type {
 } from "./repository";
 
 import {
+  normalizeProfile,
   normalizeQuestionnaire,
+  normalizeResume,
   normalizeRoadmap,
   normalizeUserId,
-  normalizeProfile,
 } from "./validation";
 
 import {
@@ -50,14 +62,20 @@ import {
  * concurrency guarantees.
  */
 const writeChainsByFile =
-  new Map<string, Promise<void>>();
+  new Map<
+    string,
+    Promise<void>
+  >();
 
 export class JsonFileCareerRepository
   implements CareerRepository
 {
-  private readonly filePath: string;
+  private readonly filePath:
+    string;
 
-  constructor(filePath?: string) {
+  constructor(
+    filePath?: string
+  ) {
     this.filePath =
       path.resolve(
         filePath ??
@@ -70,50 +88,54 @@ export class JsonFileCareerRepository
   }
 
   private async readState():
-  Promise<PersistenceState>
-{
-  try {
-    const raw =
-      await readFile(
-        this.filePath,
-        "utf8"
+    Promise<PersistenceState>
+  {
+    try {
+      const raw =
+        await readFile(
+          this.filePath,
+          "utf8"
+        );
+
+      const parsed =
+        JSON.parse(
+          raw
+        ) as unknown;
+
+      return validatePersistenceState(
+        parsed
       );
+    } catch (error) {
+      const filesystemError =
+        error as
+          NodeJS.ErrnoException;
 
-    const parsed =
-      JSON.parse(raw) as unknown;
+      if (
+        filesystemError.code ===
+        "ENOENT"
+      ) {
+        return createEmptyPersistenceState();
+      }
 
-    return validatePersistenceState(
-      parsed
-    );
-  } catch (error) {
-    const filesystemError =
-      error as NodeJS.ErrnoException;
+      if (
+        error instanceof
+        PersistenceCorruptionError
+      ) {
+        throw error;
+      }
 
-    if (
-      filesystemError.code ===
-      "ENOENT"
-    ) {
-      return createEmptyPersistenceState();
-    }
+      if (
+        error instanceof
+        SyntaxError
+      ) {
+        throw new PersistenceCorruptionError(
+          "CareerLM persistence data contains invalid JSON."
+        );
+      }
 
-    if (
-      error instanceof
-      PersistenceCorruptionError
-    ) {
       throw error;
     }
-
-    if (
-      error instanceof SyntaxError
-    ) {
-      throw new PersistenceCorruptionError(
-        "CareerLM persistence data contains invalid JSON."
-      );
-    }
-
-    throw error;
   }
-}
 
   /**
    * Uses a temporary file + rename rather than writing directly over
@@ -125,20 +147,28 @@ export class JsonFileCareerRepository
   private async writeState(
     state: PersistenceState
   ): Promise<void> {
-    const directory = path.dirname(
-      this.filePath
-    );
+    const directory =
+      path.dirname(
+        this.filePath
+      );
 
-    await mkdir(directory, {
-      recursive: true,
-    });
+    await mkdir(
+      directory,
+      {
+        recursive: true,
+      }
+    );
 
     const temporaryPath =
       `${this.filePath}.${process.pid}.${randomUUID()}.tmp`;
 
     await writeFile(
       temporaryPath,
-      `${JSON.stringify(state, null, 2)}\n`,
+      `${JSON.stringify(
+        state,
+        null,
+        2
+      )}\n`,
       "utf8"
     );
 
@@ -148,150 +178,227 @@ export class JsonFileCareerRepository
     );
   }
 
-/**
- * Serializes mutations across repository instances that share the
- * same persistence file.
- *
- * Repository instances pointing to different files remain independent.
- */
-private async mutate<T>(
-  callback: (
-    state: PersistenceState
-  ) => Promise<T> | T
-): Promise<T> {
-  const lockKey =
-    this.filePath;
+  /**
+   * Serializes mutations across repository instances that share the
+   * same persistence file.
+   *
+   * Repository instances pointing to different files remain independent.
+   */
+  private async mutate<T>(
+    callback: (
+      state: PersistenceState
+    ) => Promise<T> | T
+  ): Promise<T> {
+    const lockKey =
+      this.filePath;
 
-  const previousWrite =
-    writeChainsByFile.get(
-      lockKey
-    ) ??
-    Promise.resolve();
+    const previousWrite =
+      writeChainsByFile.get(
+        lockKey
+      ) ??
+      Promise.resolve();
 
-  let releaseLock!: () => void;
+    let releaseLock!:
+      () => void;
 
-  const currentLock =
-    new Promise<void>(
-      (resolve) => {
-        releaseLock =
-          resolve;
+    const currentLock =
+      new Promise<void>(
+        (resolve) => {
+          releaseLock =
+            resolve;
+        }
+      );
+
+    const queuedLock =
+      previousWrite.then(
+        () => currentLock
+      );
+
+    writeChainsByFile.set(
+      lockKey,
+      queuedLock
+    );
+
+    await previousWrite;
+
+    try {
+      const state =
+        await this.readState();
+
+      const result =
+        await callback(
+          state
+        );
+
+      await this.writeState(
+        state
+      );
+
+      return structuredClone(
+        result
+      );
+    } finally {
+      releaseLock();
+
+      /**
+       * Only remove this queue if another mutation has not already
+       * been queued behind it.
+       */
+      if (
+        writeChainsByFile.get(
+          lockKey
+        ) === queuedLock
+      ) {
+        writeChainsByFile.delete(
+          lockKey
+        );
+      }
+    }
+  }
+
+  async saveProfile(
+    userId: string,
+    input: ProfileInput
+  ): Promise<ProfileRecord> {
+    const normalizedUserId =
+      normalizeUserId(userId);
+
+    const profile =
+      normalizeProfile(input);
+
+    return this.mutate(
+      async (state) => {
+        const now =
+          new Date().toISOString();
+
+        const currentUser =
+          state.users[
+            normalizedUserId
+          ] ?? {};
+
+        const existing =
+          currentUser.profile;
+
+        const record:
+          ProfileRecord = {
+            ...profile,
+
+            userId:
+              normalizedUserId,
+
+            schemaVersion: 1,
+
+            createdAt:
+              existing?.createdAt ??
+              now,
+
+            updatedAt:
+              now,
+          };
+
+        state.users[
+          normalizedUserId
+        ] = {
+          ...currentUser,
+          profile:
+            record,
+        };
+
+        return record;
       }
     );
+  }
 
-  const queuedLock =
-    previousWrite.then(
-      () => currentLock
-    );
+  async getProfile(
+    userId: string
+  ): Promise<ProfileRecord | null> {
+    const normalizedUserId =
+      normalizeUserId(userId);
 
-  writeChainsByFile.set(
-    lockKey,
-    queuedLock
-  );
-
-  await previousWrite;
-
-  try {
     const state =
       await this.readState();
 
-    const result =
-      await callback(state);
-
-    await this.writeState(
-      state
-    );
-
-    return structuredClone(
-      result
-    );
-  } finally {
-    releaseLock();
-
-    /**
-     * Only remove this queue if another mutation has not already
-     * been queued behind it.
-     */
-    if (
-      writeChainsByFile.get(
-        lockKey
-      ) === queuedLock
-    ) {
-      writeChainsByFile.delete(
-        lockKey
-      );
-    }
-  }
-}
-
-async saveProfile(
-  userId: string,
-  input: ProfileInput
-): Promise<ProfileRecord> {
-  const normalizedUserId =
-    normalizeUserId(userId);
-
-  const profile =
-    normalizeProfile(input);
-
-  return this.mutate(
-    async (state) => {
-      const now =
-        new Date().toISOString();
-
-      const currentUser =
-        state.users[
-          normalizedUserId
-        ] ?? {};
-
-      const existing =
-        currentUser.profile;
-
-      const record:
-        ProfileRecord = {
-          ...profile,
-
-          userId:
-            normalizedUserId,
-
-          schemaVersion: 1,
-
-          createdAt:
-            existing?.createdAt ??
-            now,
-
-          updatedAt: now,
-        };
-
+    const profile =
       state.users[
         normalizedUserId
-      ] = {
-        ...currentUser,
-        profile: record,
-      };
+      ]?.profile;
 
-      return record;
-    }
-  );
-}
+    return profile
+      ? structuredClone(profile)
+      : null;
+  }
 
-async getProfile(
-  userId: string
-): Promise<ProfileRecord | null> {
-  const normalizedUserId =
-    normalizeUserId(userId);
+  async saveResume(
+    userId: string,
+    input: ResumeInput
+  ): Promise<ResumeRecord> {
+    const normalizedUserId =
+      normalizeUserId(userId);
 
-  const state =
-    await this.readState();
+    const resume =
+      normalizeResume(input);
 
-  const profile =
-    state.users[
-      normalizedUserId
-    ]?.profile;
+    return this.mutate(
+      async (state) => {
+        const now =
+          new Date().toISOString();
 
-  return profile
-    ? structuredClone(profile)
-    : null;
-}
+        const currentUser =
+          state.users[
+            normalizedUserId
+          ] ?? {};
+
+        const existing =
+          currentUser.resume;
+
+        const record:
+          ResumeRecord = {
+            ...resume,
+
+            userId:
+              normalizedUserId,
+
+            schemaVersion: 1,
+
+            createdAt:
+              existing?.createdAt ??
+              now,
+
+            updatedAt:
+              now,
+          };
+
+        state.users[
+          normalizedUserId
+        ] = {
+          ...currentUser,
+          resume:
+            record,
+        };
+
+        return record;
+      }
+    );
+  }
+
+  async getResume(
+    userId: string
+  ): Promise<ResumeRecord | null> {
+    const normalizedUserId =
+      normalizeUserId(userId);
+
+    const state =
+      await this.readState();
+
+    const resume =
+      state.users[
+        normalizedUserId
+      ]?.resume;
+
+    return resume
+      ? structuredClone(resume)
+      : null;
+  }
 
   async saveQuestionnaire(
     userId: string,
@@ -301,7 +408,9 @@ async getProfile(
       normalizeUserId(userId);
 
     const questionnaire =
-      normalizeQuestionnaire(input);
+      normalizeQuestionnaire(
+        input
+      );
 
     return this.mutate(
       async (state) => {
@@ -309,27 +418,36 @@ async getProfile(
           new Date().toISOString();
 
         const currentUser =
-          state.users[normalizedUserId] ?? {};
+          state.users[
+            normalizedUserId
+          ] ?? {};
 
         const existing =
           currentUser.questionnaire;
 
-        const record: QuestionnaireRecord = {
-          ...questionnaire,
+        const record:
+          QuestionnaireRecord = {
+            ...questionnaire,
 
-          userId: normalizedUserId,
+            userId:
+              normalizedUserId,
 
-          schemaVersion: 1,
+            schemaVersion: 1,
 
-          createdAt:
-            existing?.createdAt ?? now,
+            createdAt:
+              existing?.createdAt ??
+              now,
 
-          updatedAt: now,
-        };
+            updatedAt:
+              now,
+          };
 
-        state.users[normalizedUserId] = {
+        state.users[
+          normalizedUserId
+        ] = {
           ...currentUser,
-          questionnaire: record,
+          questionnaire:
+            record,
         };
 
         return record;
@@ -347,11 +465,14 @@ async getProfile(
       await this.readState();
 
     const questionnaire =
-      state.users[normalizedUserId]
-        ?.questionnaire;
+      state.users[
+        normalizedUserId
+      ]?.questionnaire;
 
     return questionnaire
-      ? structuredClone(questionnaire)
+      ? structuredClone(
+          questionnaire
+        )
       : null;
   }
 
@@ -363,70 +484,87 @@ async getProfile(
       normalizeUserId(userId);
 
     const roadmap =
-      normalizeRoadmap(input);
+      normalizeRoadmap(
+        input
+      );
 
     return this.mutate(
       async (state) => {
         const now =
           new Date().toISOString();
 
-        const milestones: MilestoneRecord[] =
-          roadmap.milestones.map(
-            (milestone) => ({
-              order: milestone.order,
+        const milestones:
+          MilestoneRecord[] =
+            roadmap.milestones.map(
+              (milestone) => ({
+                order:
+                  milestone.order,
 
-              id:
-                milestone.id ??
-                randomUUID(),
+                id:
+                  milestone.id ??
+                  randomUUID(),
 
-              title: milestone.title,
+                title:
+                  milestone.title,
 
-              description:
-                milestone.description,
+                description:
+                  milestone.description,
 
-              estimatedHours:
-                milestone.estimatedHours,
+                estimatedHours:
+                  milestone.estimatedHours,
 
-              skills: [
-                ...milestone.skills,
-              ],
+                skills: [
+                  ...milestone.skills,
+                ],
 
-              status: milestone.status,
-            })
-          );
+                status:
+                  milestone.status,
+              })
+            );
 
-        const record: RoadmapRecord = {
-          id: randomUUID(),
+        const record:
+          RoadmapRecord = {
+            id:
+              randomUUID(),
 
-          userId: normalizedUserId,
+            userId:
+              normalizedUserId,
 
-          title: roadmap.title,
+            title:
+              roadmap.title,
 
-          targetRole:
-            roadmap.targetRole,
+            targetRole:
+              roadmap.targetRole,
 
-          estimatedWeeks:
-            roadmap.estimatedWeeks,
+            estimatedWeeks:
+              roadmap.estimatedWeeks,
 
-          milestones,
+            milestones,
 
-          createdAt: now,
+            createdAt:
+              now,
 
-          updatedAt: now,
-        };
+            updatedAt:
+              now,
+          };
 
         const currentUser =
-          state.users[normalizedUserId] ?? {};
+          state.users[
+            normalizedUserId
+          ] ?? {};
 
         /**
          * Deliberately replaces the user's active roadmap.
          *
-         * Sprint 2 requires one active roadmap per user rather than
+         * CareerLM requires one active roadmap per user rather than
          * accumulating multiple competing active roadmaps.
          */
-        state.users[normalizedUserId] = {
+        state.users[
+          normalizedUserId
+        ] = {
           ...currentUser,
-          activeRoadmap: record,
+          activeRoadmap:
+            record,
         };
 
         return record;
@@ -444,8 +582,9 @@ async getProfile(
       await this.readState();
 
     const roadmap =
-      state.users[normalizedUserId]
-        ?.activeRoadmap;
+      state.users[
+        normalizedUserId
+      ]?.activeRoadmap;
 
     return roadmap
       ? structuredClone(roadmap)
@@ -463,7 +602,9 @@ async getProfile(
     const normalizedMilestoneId =
       milestoneId.trim();
 
-    if (!normalizedMilestoneId) {
+    if (
+      !normalizedMilestoneId
+    ) {
       throw new PersistenceValidationError(
         "A milestone ID is required."
       );
@@ -476,7 +617,11 @@ async getProfile(
         "completed",
       ]);
 
-    if (!allowedStatuses.has(status)) {
+    if (
+      !allowedStatuses.has(
+        status
+      )
+    ) {
       throw new PersistenceValidationError(
         `Invalid milestone status: ${status}`
       );
@@ -485,7 +630,9 @@ async getProfile(
     return this.mutate(
       async (state) => {
         const user =
-          state.users[normalizedUserId];
+          state.users[
+            normalizedUserId
+          ];
 
         const roadmap =
           user?.activeRoadmap;
@@ -509,7 +656,8 @@ async getProfile(
           );
         }
 
-        milestone.status = status;
+        milestone.status =
+          status;
 
         roadmap.updatedAt =
           new Date().toISOString();
