@@ -82,6 +82,57 @@ export interface ProfileRecord
   updatedAt: string;
 }
 
+/**
+ * Normalized résumé sections produced by the résumé parsing layer.
+ *
+ * Empty arrays represent sections that were not present in the submitted
+ * résumé. This gives downstream persistence and analysis code a stable
+ * structure without requiring parser-specific optional properties.
+ */
+export interface ResumeSections {
+  education: string[];
+
+  experience: string[];
+
+  skills: string[];
+
+  projects: string[];
+}
+
+/**
+ * Storage-independent résumé information accepted by the persistence layer.
+ *
+ * The persistence domain stores normalized textual information rather than
+ * raw PDF/DOCX binary data. File parsing and text extraction belong to the
+ * résumé-processing layer outside of persistence.
+ */
+export interface ResumeInput {
+  normalizedText: string;
+
+  sections: ResumeSections;
+}
+
+/**
+ * Persisted current résumé for one CareerLM user.
+ *
+ * CareerLM currently models one active/current résumé per user. A future
+ * version-history feature can be added without exposing storage technology
+ * to application consumers.
+ */
+export interface ResumeRecord
+  extends ResumeInput {
+  userId: string;
+
+  /**
+   * Allows future migrations if the persisted résumé structure changes.
+   */
+  schemaVersion: 1;
+
+  createdAt: string;
+
+  updatedAt: string;
+}
+
 export interface MilestoneInput {
   /**
    * Optional so the persistence layer can generate an ID.
@@ -134,12 +185,11 @@ export interface RoadmapRecord
 /**
  * Everything CareerLM currently persists for one user.
  *
- * Later sprints can extend this with:
- * - resume metadata
+ * Later sprints can continue extending this with:
  * - portfolio information
  * - job preferences
  *
- * without changing the repository consumer API unnecessarily.
+ * without changing repository consumers unnecessarily.
  */
 export interface UserPersistenceState {
   profile?: ProfileRecord;
@@ -147,6 +197,8 @@ export interface UserPersistenceState {
   questionnaire?: QuestionnaireRecord;
 
   activeRoadmap?: RoadmapRecord;
+
+  resume?: ResumeRecord;
 }
 
 /**
