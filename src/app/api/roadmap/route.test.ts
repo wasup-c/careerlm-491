@@ -556,3 +556,87 @@ beforeEach(() => {
     );
   });
 ;
+
+describe("CC5.1 input boundary protection", () => {
+  it.each([
+    ["missing career role", { targetCareerRole: undefined }],
+    ["numeric career role", { targetCareerRole: 123 }],
+    ["empty career role", { targetCareerRole: "" }],
+    ["whitespace career role", { targetCareerRole: "   " }],
+    ["invalid timeline", { targetTimeline: "Tomorrow" }],
+    ["empty learning styles", { preferredLearningStyle: [] }],
+    ["invalid experience", { experienceLevel: "Expert" }],
+  ])(
+    "rejects %s without downstream calls",
+    async (_scenario, overrides) => {
+      const { response, body } = await callRoute({
+        ...validQuestionnaire,
+        ...overrides,
+      });
+
+      expect(response.status).toBe(400);
+      expect(body.success).toBe(false);
+      expect(body.error.code).toBe("VALIDATION_ERROR");
+
+      expect(mocks.generateRoadmap)
+        .not.toHaveBeenCalled();
+
+      expect(mocks.saveMyQuestionnaire)
+        .not.toHaveBeenCalled();
+
+      expect(mocks.createOrReplaceMyRoadmap)
+        .not.toHaveBeenCalled();
+    }
+  );
+
+  it("rejects malformed JSON before downstream work", async () => {
+    const request = new Request(
+      "http://localhost/api/roadmap",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: '{"targetCareerRole":',
+      }
+    );
+
+    const response = await POST(request);
+    const body = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(body.error.code).toBe("VALIDATION_ERROR");
+
+    expect(mocks.generateRoadmap)
+      .not.toHaveBeenCalled();
+
+    expect(mocks.saveMyQuestionnaire)
+      .not.toHaveBeenCalled();
+
+    expect(mocks.createOrReplaceMyRoadmap)
+      .not.toHaveBeenCalled();
+  });
+
+  it("does not forward an unexpected userId", async () => {
+    mocks.generateRoadmap.mockResolvedValue({
+      success: true,
+      roadmap: generatedRoadmap,
+    });
+
+    const { response } = await callRoute({
+      ...validQuestionnaire,
+      userId: "another-user",
+    });
+
+    // Current allowlist-and-strip behavior
+    expect(response.status).toBe(200);
+
+    expect(mocks.generateRoadmap)
+      .toHaveBeenCalledWith(validQuestionnaire);
+
+    expect(
+      mocks.saveMyQuestionnaire.mock.calls[0][0]
+    ).not.toHaveProperty("userId");
+  });
+
+});
