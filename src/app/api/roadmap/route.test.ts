@@ -560,6 +560,7 @@ beforeEach(() => {
 describe("CC5.1 input boundary protection", () => {
   it.each([
     ["missing career role", { targetCareerRole: undefined }],
+    ["blank career role", { targetCareerRole: "" }],
     ["numeric career role", { targetCareerRole: 123 }],
     ["empty career role", { targetCareerRole: "" }],
     ["whitespace career role", { targetCareerRole: "   " }],
