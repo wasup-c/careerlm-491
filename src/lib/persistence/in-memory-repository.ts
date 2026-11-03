@@ -1,4 +1,6 @@
-import { randomUUID } from "node:crypto";
+import {
+  randomUUID,
+} from "node:crypto";
 
 import type {
   MilestoneRecord,
@@ -10,6 +12,8 @@ import type {
   RoadmapRecord,
   ProfileInput,
   ProfileRecord,
+  ResumeInput,
+  ResumeRecord,
 } from "./domain";
 
 import {
@@ -26,10 +30,11 @@ import type {
 } from "./repository";
 
 import {
+  normalizeProfile,
   normalizeQuestionnaire,
+  normalizeResume,
   normalizeRoadmap,
   normalizeUserId,
-  normalizeProfile,
 } from "./validation";
 
 /**
@@ -38,7 +43,7 @@ import {
  * This adapter is useful for:
  * - automated tests
  * - service-layer tests
- * - Sprint 3 session/user integration tests
+ * - session/user integration tests
  * - development scenarios that do not require filesystem persistence
  *
  * Data exists only for the lifetime of this repository instance.
@@ -46,73 +51,139 @@ import {
 export class InMemoryCareerRepository
   implements CareerRepository
 {
-  private state: PersistenceState =
-    createEmptyPersistenceState();
+  private state:
+    PersistenceState =
+      createEmptyPersistenceState();
 
-    async saveProfile(
-      userId: string,
-      input: ProfileInput
-    ): Promise<ProfileRecord> {
-      const normalizedUserId =
-        normalizeUserId(userId);
-    
-      const profile =
-        normalizeProfile(input);
-    
-      const now =
-        new Date().toISOString();
-    
-      const currentUser =
-        this.state.users[
-          normalizedUserId
-        ] ?? {};
-    
-      const existing =
-        currentUser.profile;
-    
-      const record:
-        ProfileRecord = {
-          ...profile,
-    
-          userId:
-            normalizedUserId,
-    
-          schemaVersion: 1,
-    
-          createdAt:
-            existing?.createdAt ??
-            now,
-    
-          updatedAt: now,
-        };
-    
+  async saveProfile(
+    userId: string,
+    input: ProfileInput
+  ): Promise<ProfileRecord> {
+    const normalizedUserId =
+      normalizeUserId(userId);
+
+    const profile =
+      normalizeProfile(input);
+
+    const now =
+      new Date().toISOString();
+
+    const currentUser =
       this.state.users[
         normalizedUserId
-      ] = {
-        ...currentUser,
-        profile: record,
+      ] ?? {};
+
+    const existing =
+      currentUser.profile;
+
+    const record:
+      ProfileRecord = {
+        ...profile,
+
+        userId:
+          normalizedUserId,
+
+        schemaVersion: 1,
+
+        createdAt:
+          existing?.createdAt ??
+          now,
+
+        updatedAt: now,
       };
-    
-      return structuredClone(
-        record
-      );
-    }
-    
-    async getProfile(
-      userId: string
-    ): Promise<ProfileRecord | null> {
-      const normalizedUserId =
-        normalizeUserId(userId);
-    
-      const profile =
-        this.state.users[
-          normalizedUserId
-        ]?.profile;
-    
-      return profile
-        ? structuredClone(profile)
-        : null;
-    }
+
+    this.state.users[
+      normalizedUserId
+    ] = {
+      ...currentUser,
+      profile: record,
+    };
+
+    return structuredClone(
+      record
+    );
+  }
+
+  async getProfile(
+    userId: string
+  ): Promise<ProfileRecord | null> {
+    const normalizedUserId =
+      normalizeUserId(userId);
+
+    const profile =
+      this.state.users[
+        normalizedUserId
+      ]?.profile;
+
+    return profile
+      ? structuredClone(profile)
+      : null;
+  }
+
+  async saveResume(
+    userId: string,
+    input: ResumeInput
+  ): Promise<ResumeRecord> {
+    const normalizedUserId =
+      normalizeUserId(userId);
+
+    const resume =
+      normalizeResume(input);
+
+    const now =
+      new Date().toISOString();
+
+    const currentUser =
+      this.state.users[
+        normalizedUserId
+      ] ?? {};
+
+    const existing =
+      currentUser.resume;
+
+    const record:
+      ResumeRecord = {
+        ...resume,
+
+        userId:
+          normalizedUserId,
+
+        schemaVersion: 1,
+
+        createdAt:
+          existing?.createdAt ??
+          now,
+
+        updatedAt: now,
+      };
+
+    this.state.users[
+      normalizedUserId
+    ] = {
+      ...currentUser,
+      resume: record,
+    };
+
+    return structuredClone(
+      record
+    );
+  }
+
+  async getResume(
+    userId: string
+  ): Promise<ResumeRecord | null> {
+    const normalizedUserId =
+      normalizeUserId(userId);
+
+    const resume =
+      this.state.users[
+        normalizedUserId
+      ]?.resume;
+
+    return resume
+      ? structuredClone(resume)
+      : null;
+  }
 
   async saveQuestionnaire(
     userId: string,
@@ -128,30 +199,39 @@ export class InMemoryCareerRepository
       new Date().toISOString();
 
     const currentUser =
-      this.state.users[normalizedUserId] ?? {};
+      this.state.users[
+        normalizedUserId
+      ] ?? {};
 
     const existing =
       currentUser.questionnaire;
 
-    const record: QuestionnaireRecord = {
-      ...questionnaire,
+    const record:
+      QuestionnaireRecord = {
+        ...questionnaire,
 
-      userId: normalizedUserId,
+        userId:
+          normalizedUserId,
 
-      schemaVersion: 1,
+        schemaVersion: 1,
 
-      createdAt:
-        existing?.createdAt ?? now,
+        createdAt:
+          existing?.createdAt ??
+          now,
 
-      updatedAt: now,
-    };
+        updatedAt: now,
+      };
 
-    this.state.users[normalizedUserId] = {
+    this.state.users[
+      normalizedUserId
+    ] = {
       ...currentUser,
       questionnaire: record,
     };
 
-    return structuredClone(record);
+    return structuredClone(
+      record
+    );
   }
 
   async getQuestionnaire(
@@ -161,11 +241,14 @@ export class InMemoryCareerRepository
       normalizeUserId(userId);
 
     const questionnaire =
-      this.state.users[normalizedUserId]
-        ?.questionnaire;
+      this.state.users[
+        normalizedUserId
+      ]?.questionnaire;
 
     return questionnaire
-      ? structuredClone(questionnaire)
+      ? structuredClone(
+          questionnaire
+        )
       : null;
   }
 
@@ -182,60 +265,77 @@ export class InMemoryCareerRepository
     const now =
       new Date().toISOString();
 
-    const milestones: MilestoneRecord[] =
-      roadmap.milestones.map(
-        (milestone) => ({
-          order: milestone.order,
+    const milestones:
+      MilestoneRecord[] =
+        roadmap.milestones.map(
+          (milestone) => ({
+            order:
+              milestone.order,
 
-          id:
-            milestone.id ??
-            randomUUID(),
+            id:
+              milestone.id ??
+              randomUUID(),
 
-          title: milestone.title,
+            title:
+              milestone.title,
 
-          description:
-            milestone.description,
+            description:
+              milestone.description,
 
-          estimatedHours:
-            milestone.estimatedHours,
+            estimatedHours:
+              milestone.estimatedHours,
 
-          skills: [
-            ...milestone.skills,
-          ],
+            skills: [
+              ...milestone.skills,
+            ],
 
-          status: milestone.status,
-        })
-      );
+            status:
+              milestone.status,
+          })
+        );
 
-    const record: RoadmapRecord = {
-      id: randomUUID(),
+    const record:
+      RoadmapRecord = {
+        id:
+          randomUUID(),
 
-      userId: normalizedUserId,
+        userId:
+          normalizedUserId,
 
-      title: roadmap.title,
+        title:
+          roadmap.title,
 
-      targetRole:
-        roadmap.targetRole,
+        targetRole:
+          roadmap.targetRole,
 
-      estimatedWeeks:
-        roadmap.estimatedWeeks,
+        estimatedWeeks:
+          roadmap.estimatedWeeks,
 
-      milestones,
+        milestones,
 
-      createdAt: now,
+        createdAt:
+          now,
 
-      updatedAt: now,
-    };
+        updatedAt:
+          now,
+      };
 
     const currentUser =
-      this.state.users[normalizedUserId] ?? {};
+      this.state.users[
+        normalizedUserId
+      ] ?? {};
 
-    this.state.users[normalizedUserId] = {
+    this.state.users[
+      normalizedUserId
+    ] = {
       ...currentUser,
-      activeRoadmap: record,
+      activeRoadmap:
+        record,
     };
 
-    return structuredClone(record);
+    return structuredClone(
+      record
+    );
   }
 
   async getActiveRoadmap(
@@ -245,8 +345,9 @@ export class InMemoryCareerRepository
       normalizeUserId(userId);
 
     const roadmap =
-      this.state.users[normalizedUserId]
-        ?.activeRoadmap;
+      this.state.users[
+        normalizedUserId
+      ]?.activeRoadmap;
 
     return roadmap
       ? structuredClone(roadmap)
@@ -277,14 +378,20 @@ export class InMemoryCareerRepository
         "completed",
       ]);
 
-    if (!allowedStatuses.has(status)) {
+    if (
+      !allowedStatuses.has(
+        status
+      )
+    ) {
       throw new PersistenceValidationError(
         `Invalid milestone status: ${status}`
       );
     }
 
     const user =
-      this.state.users[normalizedUserId];
+      this.state.users[
+        normalizedUserId
+      ];
 
     const roadmap =
       user?.activeRoadmap;
@@ -308,12 +415,15 @@ export class InMemoryCareerRepository
       );
     }
 
-    milestone.status = status;
+    milestone.status =
+      status;
 
     roadmap.updatedAt =
       new Date().toISOString();
 
-    return structuredClone(roadmap);
+    return structuredClone(
+      roadmap
+    );
   }
 
   async resetDemoData(

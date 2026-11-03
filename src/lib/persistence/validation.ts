@@ -4,6 +4,7 @@ import type {
     RoadmapInput,
     ExperienceLevel,
     ProfileInput,
+    ResumeInput,
   } from "./domain";
   
   import { PersistenceValidationError } from "./errors";
@@ -120,6 +121,99 @@ import type {
     }
   
     return normalized;
+  }
+
+  function normalizeResumeSection(
+    value: string[],
+    fieldName: string
+  ): string[] {
+    if (!Array.isArray(value)) {
+      throw new PersistenceValidationError(
+        `${fieldName} must be an array.`
+      );
+    }
+  
+    const normalizedValues =
+      value.map(
+        (
+          item,
+          index
+        ) => {
+          if (
+            typeof item !==
+            "string"
+          ) {
+            throw new PersistenceValidationError(
+              `${fieldName}[${index}] must be a string.`
+            );
+          }
+  
+          return item.trim();
+        }
+      )
+      .filter(Boolean);
+  
+    return Array.from(
+      new Set(normalizedValues)
+    );
+  }
+  
+  /**
+   * Normalizes résumé data before persistence.
+   *
+   * Parsing and section detection happen outside the persistence layer.
+   * Persistence receives a normalized textual representation and ensures
+   * that the stored structure remains canonical.
+   */
+  export function normalizeResume(
+    input: ResumeInput
+  ): ResumeInput {
+    const normalizedText =
+      requireNonEmptyString(
+        input.normalizedText,
+        "Resume normalized text"
+      );
+  
+    if (
+      typeof input.sections !==
+        "object" ||
+      input.sections === null ||
+      Array.isArray(input.sections)
+    ) {
+      throw new PersistenceValidationError(
+        "Resume sections are required."
+      );
+    }
+  
+    return {
+      normalizedText,
+  
+      sections: {
+        education:
+          normalizeResumeSection(
+            input.sections.education,
+            "Resume education"
+          ),
+  
+        experience:
+          normalizeResumeSection(
+            input.sections.experience,
+            "Resume experience"
+          ),
+  
+        skills:
+          normalizeResumeSection(
+            input.sections.skills,
+            "Resume skills"
+          ),
+  
+        projects:
+          normalizeResumeSection(
+            input.sections.projects,
+            "Resume projects"
+          ),
+      },
+    };
   }
 
   export function normalizeQuestionnaire(
