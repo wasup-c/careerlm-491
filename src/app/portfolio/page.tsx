@@ -1,18 +1,34 @@
 import Link from "next/link";
 
 import SharedLayout from "@/components/SharedLayout";
-import { mockRoadmap } from "@/lib/mockRoadmap";
-import { getCompletedPortfolioWork } from "@/lib/portfolioJourney";
-import type { CareerRoadmap } from "@/types/career";
+
+import {
+  getCompletedPortfolioWork,
+} from "@/lib/portfolioJourney";
+
+import {
+  careerDataService,
+} from "@/lib/services";
+
+import type {
+  CareerRoadmap,
+} from "@/types/career";
+
+export const dynamic =
+  "force-dynamic";
 
 type PortfolioContentProps = {
-  roadmap: CareerRoadmap;
+  roadmap:
+    CareerRoadmap;
 };
 
 export function PortfolioContent({
   roadmap,
 }: PortfolioContentProps) {
-  const completedWork = getCompletedPortfolioWork(roadmap);
+  const completedWork =
+    getCompletedPortfolioWork(
+      roadmap
+    );
 
   return (
     <section className="mx-auto w-full max-w-3xl">
@@ -22,12 +38,19 @@ export function PortfolioContent({
         </p>
 
         <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
-          Your completed work
+          Your completed
+          work
         </h1>
 
         <p className="mt-3 text-slate-600">
-          Completed roadmap milestones appear here so you can track the
-          skills and accomplishments you have built along your career path.
+          Completed roadmap
+          milestones appear
+          here so you can
+          track the skills
+          and accomplishments
+          you have built
+          along your career
+          path.
         </p>
 
         <Link
@@ -38,72 +61,143 @@ export function PortfolioContent({
         </Link>
       </header>
 
-      {completedWork.length === 0 ? (
+      {completedWork.length ===
+      0 ? (
         <section className="mt-8 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
           <h2 className="text-xl font-semibold text-slate-900">
-            No completed work yet
+            No completed work
+            yet
           </h2>
 
           <p className="mt-2 text-slate-600">
-            Complete roadmap milestones to start building your portfolio.
+            Complete roadmap
+            milestones to
+            start building
+            your portfolio.
           </p>
         </section>
       ) : (
         <section className="mt-8 space-y-6">
           <h2 className="text-2xl font-bold text-slate-900">
-            Completed roadmap work
+            Completed
+            roadmap work
           </h2>
 
-          {completedWork.map((milestone) => (
-            <article
-              key={
-                milestone.id ??
-                `${milestone.order}-${milestone.title}`
-              }
-              className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm"
-            >
-              <p className="text-sm font-semibold text-teal-700">
-                Completed milestone
-              </p>
+          {completedWork.map(
+            (
+              milestone
+            ) => (
+              <article
+                key={
+                  milestone.id ??
+                  `${milestone.order}-${milestone.title}`
+                }
+                className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm"
+              >
+                <p className="text-sm font-semibold text-teal-700">
+                  Completed
+                  milestone
+                </p>
 
-              <h3 className="mt-2 text-xl font-semibold text-slate-900">
-                {milestone.title}
-              </h3>
+                <h3 className="mt-2 text-xl font-semibold text-slate-900">
+                  {
+                    milestone.title
+                  }
+                </h3>
 
-              <p className="mt-2 text-slate-600">
-                {milestone.description}
-              </p>
+                <p className="mt-2 text-slate-600">
+                  {
+                    milestone.description
+                  }
+                </p>
 
-              {milestone.skills.length > 0 && (
-                <div className="mt-4">
-                  <p className="text-sm font-semibold text-slate-900">
-                    Skills developed
-                  </p>
+                {milestone
+                  .skills
+                  .length >
+                  0 && (
+                  <div className="mt-4">
+                    <p className="text-sm font-semibold text-slate-900">
+                      Skills
+                      developed
+                    </p>
 
-                  <ul className="mt-2 flex flex-wrap gap-2">
-                    {milestone.skills.map((skill) => (
-                      <li
-                        key={skill}
-                        className="rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-700"
-                      >
-                        {skill}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </article>
-          ))}
+                    <ul className="mt-2 flex flex-wrap gap-2">
+                      {milestone.skills.map(
+                        (
+                          skill
+                        ) => (
+                          <li
+                            key={
+                              skill
+                            }
+                            className="rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-700"
+                          >
+                            {
+                              skill
+                            }
+                          </li>
+                        )
+                      )}
+                    </ul>
+                  </div>
+                )}
+              </article>
+            )
+          )}
         </section>
       )}
     </section>
   );
 }
 
-export default function PortfolioPage() {
+function EmptyPortfolio() {
+  return (
+    <section className="mx-auto w-full max-w-3xl">
+      <div className="rounded-xl border border-slate-200 bg-white p-8 shadow-sm">
+        <p className="text-sm font-semibold uppercase tracking-wide text-teal-700">
+          CareerLM Portfolio
+        </p>
+
+        <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-900">
+          No roadmap yet
+        </h1>
+
+        <p className="mt-3 text-slate-600">
+          CareerLM builds
+          your portfolio from
+          completed roadmap
+          milestones. Complete
+          onboarding first to
+          create your roadmap.
+        </p>
+
+        <Link
+          href="/onboarding"
+          className="mt-6 inline-flex rounded-lg bg-teal-600 px-4 py-2 font-semibold text-white transition hover:bg-teal-700"
+        >
+          Start onboarding
+        </Link>
+      </div>
+    </section>
+  );
+}
+
+export default async function PortfolioPage() {
+  const roadmap =
+    await careerDataService
+      .getMyRoadmap();
+
   return (
     <SharedLayout>
-      <PortfolioContent roadmap={mockRoadmap} />
+      {roadmap ? (
+        <PortfolioContent
+          roadmap={
+            roadmap
+          }
+        />
+      ) : (
+        <EmptyPortfolio />
+      )}
     </SharedLayout>
   );
 }
