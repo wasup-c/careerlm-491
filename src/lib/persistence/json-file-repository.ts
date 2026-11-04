@@ -400,6 +400,36 @@ export class JsonFileCareerRepository
       : null;
   }
 
+  async deleteResume(
+    userId: string
+  ): Promise<void> {
+    const normalizedUserId =
+      normalizeUserId(userId);
+
+    await this.mutate(
+      async (state) => {
+        const user =
+          state.users[
+            normalizedUserId
+          ];
+
+        if (!user) {
+          return;
+        }
+
+        delete user.resume;
+
+        if (
+          Object.keys(user).length === 0
+        ) {
+          delete state.users[
+            normalizedUserId
+          ];
+        }
+      }
+    );
+  }
+
   async saveQuestionnaire(
     userId: string,
     input: QuestionnaireInput
