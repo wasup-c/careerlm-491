@@ -119,6 +119,24 @@ export class CareerDataService {
   }
 
   /**
+   * Deletes only the current user's persisted résumé.
+   *
+   * Other user-owned CareerLM data such as profile, questionnaire, and
+   * roadmap state remain intact.
+   */
+  async deleteMyResume():
+    Promise<void>
+  {
+    const userId =
+      await this.requireCurrentUserId();
+
+    await this.repository
+      .deleteResume(
+        userId
+      );
+  }
+
+  /**
    * Returns the questionnaire owned by the current user.
    *
    * Returns null when the authenticated user has not saved a questionnaire.

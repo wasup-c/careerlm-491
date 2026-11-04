@@ -89,7 +89,8 @@ export class InMemoryCareerRepository
           existing?.createdAt ??
           now,
 
-        updatedAt: now,
+        updatedAt:
+          now,
       };
 
     this.state.users[
@@ -154,7 +155,8 @@ export class InMemoryCareerRepository
           existing?.createdAt ??
           now,
 
-        updatedAt: now,
+        updatedAt:
+          now,
       };
 
     this.state.users[
@@ -183,6 +185,32 @@ export class InMemoryCareerRepository
     return resume
       ? structuredClone(resume)
       : null;
+  }
+
+  async deleteResume(
+    userId: string
+  ): Promise<void> {
+    const normalizedUserId =
+      normalizeUserId(userId);
+
+    const user =
+      this.state.users[
+        normalizedUserId
+      ];
+
+    if (!user) {
+      return;
+    }
+
+    delete user.resume;
+
+    if (
+      Object.keys(user).length === 0
+    ) {
+      delete this.state.users[
+        normalizedUserId
+      ];
+    }
   }
 
   async saveQuestionnaire(
@@ -226,7 +254,8 @@ export class InMemoryCareerRepository
       normalizedUserId
     ] = {
       ...currentUser,
-      questionnaire: record,
+      questionnaire:
+        record,
     };
 
     return structuredClone(

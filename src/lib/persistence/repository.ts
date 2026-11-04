@@ -38,6 +38,10 @@ export interface CareerRepository {
     userId: string
   ): Promise<ResumeRecord | null>;
 
+  deleteResume(
+    userId: string
+  ): Promise<void>;
+
   saveQuestionnaire(
     userId: string,
     input: QuestionnaireInput
