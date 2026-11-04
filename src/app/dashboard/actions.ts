@@ -1,16 +1,24 @@
 "use server";
 
-// SCRUM-226 [S4-M2-SEC-3] — server action for dashboard profile saves (CC6.1).
-// Runs on the server, so the browser never chooses whose profile is saved:
-// CareerDataService resolves the current user on every call.
+import {
+  saveDashboardProfile,
+} from "@/lib/profileSave";
 
-import { saveDashboardProfile } from "@/lib/profileSave";
-import { careerDataService } from "@/lib/services";
-import type { ProfileUpdateResult } from "@/lib/fixtures/mockProfileService";
-import type { TemporaryDashboardProfile } from "@/types/dashboard";
+import {
+  careerDataService,
+} from "@/lib/services";
+
+import type {
+  DashboardProfile,
+  ProfileUpdateResult,
+} from "@/types/profile";
 
 export async function saveProfileAction(
-  profile: TemporaryDashboardProfile,
+  profile:
+    DashboardProfile
 ): Promise<ProfileUpdateResult> {
-  return saveDashboardProfile(careerDataService, profile);
+  return saveDashboardProfile(
+    careerDataService,
+    profile
+  );
 }
