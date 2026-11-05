@@ -1,24 +1,49 @@
+import {
+  updateMilestoneStatusAction,
+} from "@/app/roadmap/actions";
+
 import type {
   MilestoneStatus,
   RoadmapMilestone,
 } from "@/types/career";
 
 interface MilestoneCardProps {
-  milestone: RoadmapMilestone;
-  position: number;
+  milestone:
+    RoadmapMilestone;
+
+  position:
+    number;
 }
 
-const statusLabels: Record<MilestoneStatus, string> = {
-  "not-started": "Not started",
-  "in-progress": "In progress",
-  completed: "Completed",
-};
+const statusLabels:
+  Record<
+    MilestoneStatus,
+    string
+  > = {
+    "not-started":
+      "Not started",
 
-const statusClasses: Record<MilestoneStatus, string> = {
-  "not-started": "bg-slate-100 text-slate-700",
-  "in-progress": "bg-amber-100 text-amber-800",
-  completed: "bg-emerald-100 text-emerald-800",
-};
+    "in-progress":
+      "In progress",
+
+    completed:
+      "Completed",
+  };
+
+const statusClasses:
+  Record<
+    MilestoneStatus,
+    string
+  > = {
+    "not-started":
+      "bg-slate-100 text-slate-700",
+
+    "in-progress":
+      "bg-amber-100 text-amber-800",
+
+    completed:
+      "bg-emerald-100 text-emerald-800",
+  };
 
 export default function MilestoneCard({
   milestone,
@@ -29,25 +54,36 @@ export default function MilestoneCard({
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="text-sm font-semibold uppercase tracking-wide text-teal-700">
-            Milestone {position}
+            Milestone{" "}
+            {position}
           </p>
 
           <h2 className="mt-1 text-xl font-semibold text-slate-900">
-            {milestone.title}
+            {
+              milestone.title
+            }
           </h2>
         </div>
 
         <span
           className={`w-fit rounded-full px-3 py-1 text-sm font-medium ${
-            statusClasses[milestone.status]
+            statusClasses[
+              milestone.status
+            ]
           }`}
         >
-          {statusLabels[milestone.status]}
+          {
+            statusLabels[
+              milestone.status
+            ]
+          }
         </span>
       </div>
 
       <p className="mt-4 leading-7 text-slate-600">
-        {milestone.description}
+        {
+          milestone.description
+        }
       </p>
 
       <div className="mt-5">
@@ -59,23 +95,81 @@ export default function MilestoneCard({
           className="mt-2 flex flex-wrap gap-2"
           aria-label="Milestone skills"
         >
-          {milestone.skills.map((skill) => (
-            <li
-              key={skill}
-              className="rounded-full bg-teal-50 px-3 py-1 text-sm text-teal-800"
-            >
-              {skill}
-            </li>
-          ))}
+          {milestone.skills.map(
+            (
+              skill
+            ) => (
+              <li
+                key={
+                  skill
+                }
+                className="rounded-full bg-teal-50 px-3 py-1 text-sm text-teal-800"
+              >
+                {
+                  skill
+                }
+              </li>
+            )
+          )}
         </ul>
       </div>
 
       <p className="mt-5 text-sm text-slate-600">
         <span className="font-semibold text-slate-900">
-          Estimated effort:
+          Estimated
+          effort:
         </span>{" "}
-        {milestone.estimatedHours} hours
+        {
+          milestone.estimatedHours
+        }{" "}
+        hours
       </p>
+
+      <form
+        action={
+          updateMilestoneStatusAction
+        }
+        className="mt-6 flex flex-col gap-3 border-t border-slate-200 pt-5 sm:flex-row sm:items-end"
+      >
+        <input
+          type="hidden"
+          name="milestoneId"
+          value={
+            milestone.id
+          }
+        />
+
+        <label className="flex flex-col gap-1 text-sm font-medium text-slate-700">
+          Progress status
+
+          <select
+            name="status"
+            defaultValue={
+              milestone.status
+            }
+            className="rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-900"
+          >
+            <option value="not-started">
+              Not started
+            </option>
+
+            <option value="in-progress">
+              In progress
+            </option>
+
+            <option value="completed">
+              Completed
+            </option>
+          </select>
+        </label>
+
+        <button
+          type="submit"
+          className="rounded-md bg-teal-600 px-4 py-2 font-semibold text-white transition hover:bg-teal-700"
+        >
+          Save progress
+        </button>
+      </form>
     </article>
   );
 }
