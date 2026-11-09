@@ -12,6 +12,8 @@ import {
 import path from "node:path";
 
 import type {
+  JobPreferencesInput,
+  JobPreferencesRecord,
   MilestoneRecord,
   MilestoneStatus,
   PersistenceState,
@@ -38,6 +40,10 @@ import {
 import type {
   CareerRepository,
 } from "./repository";
+
+import {
+  normalizeJobPreferences,
+} from "./job-preferences-validation";
 
 import {
   normalizeProfile,
@@ -428,6 +434,82 @@ export class JsonFileCareerRepository
         }
       }
     );
+  }
+
+  async saveJobPreferences(
+    userId: string,
+    input: JobPreferencesInput
+  ): Promise<JobPreferencesRecord> {
+    const normalizedUserId =
+      normalizeUserId(userId);
+
+    const preferences =
+      normalizeJobPreferences(
+        input
+      );
+
+    return this.mutate(
+      async (state) => {
+        const now =
+          new Date().toISOString();
+
+        const currentUser =
+          state.users[
+            normalizedUserId
+          ] ?? {};
+
+        const existing =
+          currentUser.jobPreferences;
+
+        const record:
+          JobPreferencesRecord = {
+          ...preferences,
+
+          userId:
+            normalizedUserId,
+
+          schemaVersion: 1,
+
+          createdAt:
+            existing?.createdAt ??
+            now,
+
+          updatedAt:
+            now,
+        };
+
+        state.users[
+          normalizedUserId
+        ] = {
+          ...currentUser,
+          jobPreferences:
+            record,
+        };
+
+        return record;
+      }
+    );
+  }
+
+  async getJobPreferences(
+    userId: string
+  ): Promise<JobPreferencesRecord | null> {
+    const normalizedUserId =
+      normalizeUserId(userId);
+
+    const state =
+      await this.readState();
+
+    const preferences =
+      state.users[
+        normalizedUserId
+      ]?.jobPreferences;
+
+    return preferences
+      ? structuredClone(
+          preferences
+        )
+      : null;
   }
 
   async saveQuestionnaire(

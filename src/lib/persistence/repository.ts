@@ -1,4 +1,6 @@
 import type {
+  JobPreferencesInput,
+  JobPreferencesRecord,
   MilestoneStatus,
   QuestionnaireInput,
   QuestionnaireRecord,
@@ -41,6 +43,15 @@ export interface CareerRepository {
   deleteResume(
     userId: string
   ): Promise<void>;
+
+  saveJobPreferences(
+    userId: string,
+    input: JobPreferencesInput
+  ): Promise<JobPreferencesRecord>;
+
+  getJobPreferences(
+    userId: string
+  ): Promise<JobPreferencesRecord | null>;
 
   saveQuestionnaire(
     userId: string,

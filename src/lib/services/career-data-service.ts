@@ -7,6 +7,20 @@ import {
 } from "../auth/require-current-user";
 
 import type {
+  JobOpportunity,
+} from "../jobs/domain";
+
+import type {
+  JobProvider,
+} from "../jobs/provider";
+
+import {
+  JobProviderUnavailableError,
+} from "../jobs/provider-errors";
+
+import type {
+  JobPreferencesInput,
+  JobPreferencesRecord,
   MilestoneStatus,
   ProfileInput,
   ProfileRecord,
@@ -21,6 +35,16 @@ import type {
 import type {
   CareerRepository,
 } from "../persistence/repository";
+
+import {
+  buildJobSearchContext,
+  buildJobSearchQueryFromContext,
+} from "./job-search-context";
+
+import type {
+  JobSearchContext,
+  JobSearchOptions,
+} from "./job-search-context";
 
 /**
  * Application-service boundary for user-owned CareerLM data.
@@ -40,7 +64,10 @@ export class CareerDataService {
       CareerRepository,
 
     private readonly currentUserProvider:
-      CurrentUserProvider
+      CurrentUserProvider,
+
+    private readonly jobProvider?:
+      JobProvider
   ) {}
 
   /**
@@ -121,8 +148,8 @@ export class CareerDataService {
   /**
    * Deletes only the current user's persisted résumé.
    *
-   * Other user-owned CareerLM data such as profile, questionnaire, and
-   * roadmap state remain intact.
+   * Other user-owned CareerLM data such as profile, questionnaire, roadmap,
+   * and job preferences remain intact.
    */
   async deleteMyResume():
     Promise<void>
@@ -176,8 +203,8 @@ export class CareerDataService {
   /**
    * Returns the active roadmap owned by the current user.
    *
-   * Returns null when the authenticated user does not currently have
-   * an active roadmap.
+   * Returns null when the authenticated user does not currently have an
+   * active roadmap.
    */
   async getMyRoadmap():
     Promise<RoadmapRecord | null>
@@ -226,6 +253,129 @@ export class CareerDataService {
         userId,
         milestoneId,
         status
+      );
+  }
+
+  /**
+   * Returns the job-search preferences owned by the current user.
+   *
+   * The caller cannot select an arbitrary persistence user ID.
+   */
+  async getMyJobPreferences():
+    Promise<JobPreferencesRecord | null>
+  {
+    const userId =
+      await this.requireCurrentUserId();
+
+    return this.repository
+      .getJobPreferences(
+        userId
+      );
+  }
+
+  /**
+   * Saves or replaces the current user's job-search preferences.
+   */
+  async saveMyJobPreferences(
+    input:
+      JobPreferencesInput
+  ): Promise<JobPreferencesRecord> {
+    const userId =
+      await this.requireCurrentUserId();
+
+    return this.repository
+      .saveJobPreferences(
+        userId,
+        input
+      );
+  }
+
+  /**
+   * Aggregates the current user's available CareerLM information into one
+   * provider-independent job-search/matching context.
+   *
+   * The identity is resolved once for the entire aggregation so all source
+   * records belong to the same user even if a session provider could change
+   * between separate application operations.
+   */
+  async getMyJobSearchContext():
+    Promise<JobSearchContext>
+  {
+    const userId =
+      await this.requireCurrentUserId();
+
+    const [
+      jobPreferences,
+      profile,
+      questionnaire,
+      resume,
+      roadmap,
+    ] =
+      await Promise.all([
+        this.repository
+          .getJobPreferences(
+            userId
+          ),
+
+        this.repository
+          .getProfile(
+            userId
+          ),
+
+        this.repository
+          .getQuestionnaire(
+            userId
+          ),
+
+        this.repository
+          .getResume(
+            userId
+          ),
+
+        this.repository
+          .getActiveRoadmap(
+            userId
+          ),
+      ]);
+
+    return buildJobSearchContext({
+      jobPreferences,
+      profile,
+      questionnaire,
+      resume,
+      roadmap,
+    });
+  }
+
+  /**
+   * Searches external job opportunities using only current-user CareerLM
+   * context.
+   *
+   * Callers cannot supply an arbitrary user ID or directly choose persisted
+   * career data. The context is resolved through the same current-user
+   * boundary used by the rest of CareerLM.
+   */
+  async searchJobsForMe(
+    options:
+      JobSearchOptions = {}
+  ): Promise<JobOpportunity[]> {
+    const context =
+      await this
+        .getMyJobSearchContext();
+
+    const query =
+      buildJobSearchQueryFromContext(
+        context,
+        options
+      );
+
+    if (!this.jobProvider) {
+      throw new JobProviderUnavailableError();
+    }
+
+    return this.jobProvider
+      .searchJobs(
+        query
       );
   }
 
