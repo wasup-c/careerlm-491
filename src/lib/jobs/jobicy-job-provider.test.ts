@@ -11,6 +11,10 @@ import {
     JobSearchQuery,
   } from "./domain";
   
+  import type {
+    JobProviderFetch,
+  } from "./provider";
+  
   import {
     JobProviderMalformedResponseError,
     JobProviderRateLimitError,
@@ -94,7 +98,7 @@ import {
         "builds a Jobicy request and normalizes a representative job",
         async () => {
           const fetchMock =
-            vi.fn(
+            vi.fn<JobProviderFetch>(
               async (): Promise<Response> =>
                 jsonResponse(
                   createJobicyResponse([
@@ -313,7 +317,7 @@ import {
         "preserves missing optional provider data instead of fabricating it",
         async () => {
           const fetchMock =
-            vi.fn(
+            vi.fn<JobProviderFetch>(
               async (): Promise<Response> =>
                 jsonResponse(
                   createJobicyResponse([
@@ -406,7 +410,7 @@ import {
         "uses the provider excerpt when a full description is unavailable",
         async () => {
           const fetchMock =
-            vi.fn(
+            vi.fn<JobProviderFetch>(
               async (): Promise<Response> =>
                 jsonResponse(
                   createJobicyResponse([
@@ -457,7 +461,7 @@ import {
         "maps broad supported locations to Jobicy geo filters",
         async () => {
           const fetchMock =
-            vi.fn(
+            vi.fn<JobProviderFetch>(
               async (): Promise<Response> =>
                 jsonResponse(
                   createJobicyResponse([])
@@ -503,7 +507,7 @@ import {
         "does not call the remote-only provider for an on-site-only search",
         async () => {
           const fetchMock =
-            vi.fn(
+            vi.fn<JobProviderFetch>(
               async (): Promise<Response> =>
                 jsonResponse(
                   createJobicyResponse([])
@@ -540,7 +544,7 @@ import {
         "applies employment-type filters after provider normalization",
         async () => {
           const fetchMock =
-            vi.fn(
+            vi.fn<JobProviderFetch>(
               async (): Promise<Response> =>
                 jsonResponse(
                   createJobicyResponse([
@@ -627,7 +631,7 @@ import {
         "returns an empty array for a valid provider response with no jobs",
         async () => {
           const fetchMock =
-            vi.fn(
+            vi.fn<JobProviderFetch>(
               async (): Promise<Response> =>
                 jsonResponse(
                   createJobicyResponse([])
@@ -653,7 +657,7 @@ import {
         "converts HTTP 429 into a controlled rate-limit error",
         async () => {
           const fetchMock =
-            vi.fn(
+            vi.fn<JobProviderFetch>(
               async (): Promise<Response> =>
                 jsonResponse(
                   {
@@ -688,7 +692,7 @@ import {
         "converts provider HTTP failures into a controlled unavailable error",
         async () => {
           const fetchMock =
-            vi.fn(
+            vi.fn<JobProviderFetch>(
               async (): Promise<Response> =>
                 jsonResponse(
                   {
@@ -720,7 +724,7 @@ import {
         "converts network failures into a controlled unavailable error",
         async () => {
           const fetchMock =
-            vi.fn(
+            vi.fn<JobProviderFetch>(
               async (): Promise<Response> => {
                 throw new Error(
                   "socket failure containing provider internals"
@@ -779,7 +783,7 @@ import {
         "converts aborted requests into a controlled timeout error",
         async () => {
           const fetchMock =
-            vi.fn(
+            vi.fn<JobProviderFetch>(
               async (): Promise<Response> => {
                 const error =
                   new Error(
@@ -814,7 +818,7 @@ import {
         "rejects invalid JSON as a malformed provider response",
         async () => {
           const fetchMock =
-            vi.fn(
+            vi.fn<JobProviderFetch>(
               async (): Promise<Response> =>
                 new Response(
                   "not-json",
@@ -851,7 +855,7 @@ import {
         "rejects responses without a jobs array",
         async () => {
           const fetchMock =
-            vi.fn(
+            vi.fn<JobProviderFetch>(
               async (): Promise<Response> =>
                 jsonResponse({
                   success:
@@ -886,7 +890,7 @@ import {
         "rejects provider records with invalid required fields",
         async () => {
           const fetchMock =
-            vi.fn(
+            vi.fn<JobProviderFetch>(
               async (): Promise<Response> =>
                 jsonResponse(
                   createJobicyResponse([
@@ -930,7 +934,7 @@ import {
         "converts provider-declared failures into a controlled unavailable error",
         async () => {
           const fetchMock =
-            vi.fn(
+            vi.fn<JobProviderFetch>(
               async (): Promise<Response> =>
                 jsonResponse({
                   success:
