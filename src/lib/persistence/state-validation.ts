@@ -6,6 +6,10 @@ import {
   PersistenceCorruptionError,
 } from "./errors";
 
+import {
+  validatePersistedJobPreferencesRecord,
+} from "./job-preferences-state-validation";
+
 type UnknownRecord =
   Record<string, unknown>;
 
@@ -791,6 +795,17 @@ function validateUserState(
       userState.resume,
       userId,
       `${path}.resume`
+    );
+  }
+
+  if (
+    userState.jobPreferences !==
+    undefined
+  ) {
+    validatePersistedJobPreferencesRecord(
+      userState.jobPreferences,
+      userId,
+      `${path}.jobPreferences`
     );
   }
 

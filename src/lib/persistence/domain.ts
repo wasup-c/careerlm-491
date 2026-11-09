@@ -1,3 +1,9 @@
+import type {
+  JobEmploymentType,
+  JobExperienceLevel,
+  JobWorkplaceType,
+} from "../jobs/domain";
+
 export type ExperienceLevel =
   | "beginner"
   | "intermediate"
@@ -133,6 +139,42 @@ export interface ResumeRecord
   updatedAt: string;
 }
 
+/**
+ * User-owned job-search and matching preferences.
+ *
+ * These values describe what the CareerLM user wants independently of the
+ * currently configured external job provider.
+ */
+export interface JobPreferencesInput {
+  keywords: string;
+
+  location?: string;
+
+  workplaceTypes: JobWorkplaceType[];
+
+  employmentTypes: JobEmploymentType[];
+
+  experienceLevels: JobExperienceLevel[];
+
+  useResumeForMatching: boolean;
+
+  usePortfolioForMatching: boolean;
+}
+
+/**
+ * Persisted current job-search preferences for one CareerLM user.
+ */
+export interface JobPreferencesRecord
+  extends JobPreferencesInput {
+  userId: string;
+
+  schemaVersion: 1;
+
+  createdAt: string;
+
+  updatedAt: string;
+}
+
 export interface MilestoneInput {
   /**
    * Optional so the persistence layer can generate an ID.
@@ -185,10 +227,8 @@ export interface RoadmapRecord
 /**
  * Everything CareerLM currently persists for one user.
  *
- * Later sprints can continue extending this with:
- * - portfolio information
- * - job preferences
- *
+ * Later sprints can continue extending this with additional
+ * user-owned state, such as explicitly saved portfolio artifacts,
  * without changing repository consumers unnecessarily.
  */
 export interface UserPersistenceState {
@@ -199,6 +239,8 @@ export interface UserPersistenceState {
   activeRoadmap?: RoadmapRecord;
 
   resume?: ResumeRecord;
+
+  jobPreferences?: JobPreferencesRecord;
 }
 
 /**
