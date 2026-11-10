@@ -107,3 +107,27 @@ export class SessionTokenAlreadyExistsError
       "SessionTokenAlreadyExistsError";
   }
 }
+
+/**
+ * Raised when login credentials cannot be authenticated.
+ *
+ * The same error is used for both an unknown email and an incorrect
+ * password so the login boundary does not reveal which part failed.
+ */
+export class InvalidCredentialsError
+  extends Error
+{
+  readonly code =
+    "INVALID_CREDENTIALS";
+
+  readonly status = 401;
+
+  constructor() {
+    super(
+      "Invalid email or password."
+    );
+
+    this.name =
+      "InvalidCredentialsError";
+  }
+}
