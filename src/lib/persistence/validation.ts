@@ -158,6 +158,56 @@ import type {
     );
   }
   
+
+
+  const MAX_RESUME_TEXT_LENGTH = 100_000;
+  // Proposed limit: confirm before merging.
+
+  function normalizeResumeText(value: unknown): string {
+    if (typeof value !== "string") {
+      throw new PersistenceValidationError(
+        "Resume normalized text must be a string."
+      );
+    }
+
+    // Check size before further processing.
+    if (value.length > MAX_RESUME_TEXT_LENGTH) {
+      throw new PersistenceValidationError(
+        "Resume text exceeds the maximum length."
+      );
+    }
+
+    // Reject NUL and other disallowed control characters.
+    // Tabs, LF, and CR remain allowed.
+    if (/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/u.test(value)) {
+      throw new PersistenceValidationError(
+        "Resume text contains invalid control characters."
+      );
+    }
+
+    const normalized = value
+      .normalize("NFC")
+      .replace(/\r\n?/g, "\n")
+      .split("\n")
+      .map((line) => line.replace(/[ \t]+$/g, ""))
+      .join("\n")
+      .trim();
+
+    if (!normalized) {
+      throw new PersistenceValidationError(
+        "Resume normalized text is required."
+      );
+    }
+
+    if (normalized.length > MAX_RESUME_TEXT_LENGTH) {
+      throw new PersistenceValidationError(
+        "Resume text exceeds the maximum length."
+      );
+    }
+
+    return normalized;
+  }
+
   /**
    * Normalizes résumé data before persistence.
    *
@@ -168,10 +218,8 @@ import type {
   export function normalizeResume(
     input: ResumeInput
   ): ResumeInput {
-    const normalizedText =
-      requireNonEmptyString(
-        input.normalizedText,
-        "Resume normalized text"
+      const normalizedText = normalizeResumeText(
+        input.normalizedText
       );
   
     if (
