@@ -161,7 +161,6 @@ import type {
 
 
   const MAX_RESUME_TEXT_LENGTH = 100_000;
-  // Proposed limit: confirm before merging.
 
   function normalizeResumeText(value: unknown): string {
     if (typeof value !== "string") {

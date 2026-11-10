@@ -103,7 +103,6 @@ describe("SCRUM-243: Resume Text Normalization", () => {
     );
   });
 
-  // Proposed boundary: requires team approval.
   const MAX_RESUME_TEXT_LENGTH = 100_000;
 
   // RN-08A — Maximum accepted length
@@ -182,24 +181,5 @@ describe("SCRUM-243: Resume Text Normalization", () => {
 
     // Track whether downstream parsing is invoked.
     const parse = vi.fn();
-
-    // ACT:
-    // Invoke the actual production workflow here,
-    // injecting or mocking its real dependencies.
-    //
-    // const result = await actualResumeWorkflow(...);
-
-    // ASSERT:
-    // Once the real workflow is connected, verify:
-    //
-    // expect(result).toEqual({
-    //   ok: false,
-    //   error: "EXTRACTION_FAILED",
-    // });
-    //
-    // expect(parse).not.toHaveBeenCalled();
-    //
-    // expect(JSON.stringify(result))
-    //   .not.toContain("Synthetic internal extractor failure");
   });
 });
