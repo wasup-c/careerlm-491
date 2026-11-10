@@ -1,9 +1,10 @@
 import Link from "next/link";
 
 /**
- * CareerLM landing page — matches the team's Figma mockup:
- * centered serif wordmark, tagline, and a single call to action that
- * leads to the navigation page.
+ * CareerLM landing page.
+ *
+ * New users can begin by creating an account, while returning users
+ * can log in and continue their saved CareerLM journey.
  */
 export default function Home() {
   return (
@@ -16,12 +17,25 @@ export default function Home() {
         Career Guidance made easy, thanks to AI!
       </p>
 
-      <Link
-        href="/explore"
-        className="mt-20 inline-flex min-w-64 items-center justify-center rounded-md bg-[#2B3352] px-8 py-3.5 text-lg text-white shadow-sm transition-colors hover:bg-[#1E2440] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#2B3352] sm:mt-32"
-      >
-        Start your journey!
-      </Link>
+      <div className="mt-20 flex flex-col items-center gap-4 sm:mt-32 sm:flex-row">
+        <Link
+          href="/register"
+          className="inline-flex min-w-64 items-center justify-center rounded-md bg-[#2B3352] px-8 py-3.5 text-lg text-white shadow-sm transition-colors hover:bg-[#1E2440] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#2B3352]"
+        >
+          Start your journey!
+        </Link>
+
+        <Link
+          href="/login"
+          className="inline-flex min-w-64 items-center justify-center rounded-md border-2 border-[#2B3352] bg-transparent px-8 py-3 text-lg font-medium text-[#2B3352] transition-colors hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#2B3352]"
+        >
+          Log in
+        </Link>
+      </div>
+
+      <p className="mt-5 text-sm text-slate-600">
+        New to CareerLM? Start your journey to create your account.
+      </p>
     </main>
   );
 }

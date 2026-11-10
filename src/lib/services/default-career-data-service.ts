@@ -7,6 +7,10 @@ import {
 } from "../auth/configured-current-user-provider";
 
 import {
+  SessionCurrentUserProvider,
+} from "../auth/session-current-user-provider";
+
+import {
   JobicyJobProvider,
 } from "../jobs/jobicy-job-provider";
 
@@ -38,6 +42,22 @@ export interface CareerDataServiceCompositionOptions {
 }
 
 /**
+ * Keeps existing automated tests deterministic without making the
+ * development or production runtime depend on CAREERLM_USER_ID.
+ */
+function createDefaultCurrentUserProvider():
+  CurrentUserProvider {
+  if (
+    process.env.NODE_ENV ===
+    "test"
+  ) {
+    return new ConfiguredCurrentUserProvider();
+  }
+
+  return new SessionCurrentUserProvider();
+}
+
+/**
  * Creates the default server-side CareerLM application service.
  *
  * Runtime composition remains replaceable for tests so repository,
@@ -52,7 +72,7 @@ export function createDefaultCareerDataService(
   const currentUserProvider =
     options
       .currentUserProvider ??
-    new ConfiguredCurrentUserProvider();
+    createDefaultCurrentUserProvider();
 
   const repository =
     options.repository ??
@@ -72,13 +92,13 @@ export function createDefaultCareerDataService(
 /**
  * Default server-side CareerLM data service.
  *
- * Runtime identity must be supplied explicitly through CAREERLM_USER_ID
- * until a production authentication/session provider replaces
- * ConfiguredCurrentUserProvider.
+ * Development and production runtime identity is resolved through the
+ * database-backed HttpOnly session cookie.
  *
- * External job searches use the public Jobicy provider by default. The
- * provider remains injectable so automated tests never require live network
- * access.
+ * Automated tests retain the synthetic ConfiguredCurrentUserProvider
+ * boundary so tests do not require a Next.js request context.
+ *
+ * External job searches use the public Jobicy provider by default.
  */
 export const careerDataService =
   createDefaultCareerDataService();

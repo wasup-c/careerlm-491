@@ -1,10 +1,20 @@
 import NavBar from "@/components/NavBar";
 import QuestionsList from "@/components/questionList";
 
-export default function OnboardingPage() {
+import {
+  requireAuthenticatedPageUser,
+} from "@/lib/auth/require-authenticated-page-user";
+
+export const dynamic =
+  "force-dynamic";
+
+export default async function OnboardingPage() {
+  await requireAuthenticatedPageUser();
+
   return (
     <>
       <NavBar />
+
       <main className="min-h-screen bg-teal-50 px-4 py-10">
         <section className="mx-auto max-w-3xl">
           <header className="mb-8">
