@@ -1,15 +1,45 @@
 import path from "node:path";
 
-import { JsonFileCareerRepository } from "./json-file-repository";
+import {
+  getPostgresPool,
+} from "../database/pool";
 
-import type { CareerRepository } from "./repository";
+import {
+  JsonFileCareerRepository,
+} from "./json-file-repository";
+
+import {
+  PostgresCareerRepository,
+} from "./postgres-career-repository";
+
+import type {
+  CareerRepository,
+} from "./repository";
 
 const globalRepository =
   globalThis as typeof globalThis & {
-    careerRepository?: CareerRepository;
+    careerRepository?:
+      CareerRepository;
   };
 
-function createRepository(): CareerRepository {
+/**
+ * Creates CareerLM's runtime persistence repository.
+ *
+ * PostgreSQL is selected when DATABASE_URL is configured.
+ * Otherwise CareerLM retains the legacy JSON repository as a
+ * migration/development fallback.
+ */
+export function createCareerRepository():
+  CareerRepository {
+  const databaseUrl =
+    process.env.DATABASE_URL?.trim();
+
+  if (databaseUrl) {
+    return new PostgresCareerRepository(
+      getPostgresPool()
+    );
+  }
+
   const configuredPath =
     process.env.CAREERLM_DATA_FILE?.trim();
 
@@ -29,19 +59,26 @@ function createRepository(): CareerRepository {
 /**
  * Reuses the repository instance during Next.js development hot reloads.
  *
- * This keeps mutation serialization behavior stable across repeated
- * module evaluation during local development.
+ * This keeps repository identity and mutation behavior stable across
+ * repeated module evaluation during local development.
  */
 export const careerRepository =
-  globalRepository.careerRepository ??
-  createRepository();
+  globalRepository
+    .careerRepository ??
+  createCareerRepository();
 
-if (process.env.NODE_ENV !== "production") {
-  globalRepository.careerRepository =
+if (
+  process.env.NODE_ENV !==
+  "production"
+) {
+  globalRepository
+    .careerRepository =
     careerRepository;
 }
 
-export type { CareerRepository } from "./repository";
+export type {
+  CareerRepository,
+} from "./repository";
 
 export * from "./domain";
 
@@ -54,3 +91,11 @@ export {
 export {
   InMemoryCareerRepository,
 } from "./in-memory-repository";
+
+export {
+  JsonFileCareerRepository,
+} from "./json-file-repository";
+
+export {
+  PostgresCareerRepository,
+} from "./postgres-career-repository";

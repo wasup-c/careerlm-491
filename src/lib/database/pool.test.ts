@@ -56,7 +56,7 @@ import {
                 .current_database
             ).toBe(
               "careerlm_dev"
-            );
+          );
           } finally {
             await closeDatabase();
           }

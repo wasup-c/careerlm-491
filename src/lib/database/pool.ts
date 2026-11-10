@@ -10,6 +10,9 @@ import {
       careerLmPostgresPool?: Pool;
     };
   
+  let modulePool:
+    Pool | undefined;
+  
   function getDatabaseUrl(): string {
     const databaseUrl =
       process.env.DATABASE_URL?.trim();
@@ -31,22 +34,42 @@ import {
   }
   
   /**
-   * Reuse one PostgreSQL connection pool during Next.js development
-   * hot reloads.
+   * Lazily creates and reuses the CareerLM PostgreSQL connection pool.
    *
-   * Without this global reuse, repeated module evaluation can create
-   * unnecessary connection pools while running `next dev`.
+   * Keeping pool creation lazy allows the persistence module to be
+   * imported when DATABASE_URL is not configured so CareerLM can still
+   * use its legacy JSON fallback during the migration period.
    */
-  export const postgresPool =
-    globalDatabase.careerLmPostgresPool ??
-    createPool();
+  export function getPostgresPool():
+    Pool {
+    if (
+      globalDatabase
+        .careerLmPostgresPool
+    ) {
+      modulePool =
+        globalDatabase
+          .careerLmPostgresPool;
   
-  if (
-    process.env.NODE_ENV !==
-    "production"
-  ) {
-    globalDatabase.careerLmPostgresPool =
-      postgresPool;
+      return modulePool;
+    }
+  
+    if (modulePool) {
+      return modulePool;
+    }
+  
+    modulePool =
+      createPool();
+  
+    if (
+      process.env.NODE_ENV !==
+      "production"
+    ) {
+      globalDatabase
+        .careerLmPostgresPool =
+        modulePool;
+    }
+  
+    return modulePool;
   }
   
   /**
@@ -59,10 +82,11 @@ import {
     text: string,
     values: readonly unknown[] = []
   ): Promise<QueryResult<Row>> {
-    return postgresPool.query<Row>(
-      text,
-      [...values]
-    );
+    return getPostgresPool()
+      .query<Row>(
+        text,
+        [...values]
+      );
   }
   
   /**
@@ -72,7 +96,8 @@ import {
    */
   export async function getDatabaseClient():
     Promise<PoolClient> {
-    return postgresPool.connect();
+    return getPostgresPool()
+      .connect();
   }
   
   /**
@@ -82,12 +107,26 @@ import {
    */
   export async function closeDatabase():
     Promise<void> {
-    await postgresPool.end();
+    const pool =
+      modulePool ??
+      globalDatabase
+        .careerLmPostgresPool;
+  
+    if (!pool) {
+      return;
+    }
+  
+    await pool.end();
   
     if (
-      globalDatabase.careerLmPostgresPool ===
-      postgresPool
+      globalDatabase
+        .careerLmPostgresPool ===
+      pool
     ) {
-      delete globalDatabase.careerLmPostgresPool;
+      delete globalDatabase
+        .careerLmPostgresPool;
     }
+  
+    modulePool =
+      undefined;
   }
