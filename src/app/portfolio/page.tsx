@@ -3,6 +3,10 @@ import Link from "next/link";
 import SharedLayout from "@/components/SharedLayout";
 
 import {
+  requireAuthenticatedPageUser,
+} from "@/lib/auth/require-authenticated-page-user";
+
+import {
   getCompletedPortfolioWork,
 } from "@/lib/portfolioJourney";
 
@@ -38,19 +42,12 @@ export function PortfolioContent({
         </p>
 
         <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
-          Your completed
-          work
+          Your completed work
         </h1>
 
         <p className="mt-3 text-slate-600">
-          Completed roadmap
-          milestones appear
-          here so you can
-          track the skills
-          and accomplishments
-          you have built
-          along your career
-          path.
+          Completed roadmap milestones appear here so you can track the skills
+          and accomplishments you have built along your career path.
         </p>
 
         <Link
@@ -65,22 +62,17 @@ export function PortfolioContent({
       0 ? (
         <section className="mt-8 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
           <h2 className="text-xl font-semibold text-slate-900">
-            No completed work
-            yet
+            No completed work yet
           </h2>
 
           <p className="mt-2 text-slate-600">
-            Complete roadmap
-            milestones to
-            start building
-            your portfolio.
+            Complete roadmap milestones to start building your portfolio.
           </p>
         </section>
       ) : (
         <section className="mt-8 space-y-6">
           <h2 className="text-2xl font-bold text-slate-900">
-            Completed
-            roadmap work
+            Completed roadmap work
           </h2>
 
           {completedWork.map(
@@ -95,8 +87,7 @@ export function PortfolioContent({
                 className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm"
               >
                 <p className="text-sm font-semibold text-teal-700">
-                  Completed
-                  milestone
+                  Completed milestone
                 </p>
 
                 <h3 className="mt-2 text-xl font-semibold text-slate-900">
@@ -117,8 +108,7 @@ export function PortfolioContent({
                   0 && (
                   <div className="mt-4">
                     <p className="text-sm font-semibold text-slate-900">
-                      Skills
-                      developed
+                      Skills developed
                     </p>
 
                     <ul className="mt-2 flex flex-wrap gap-2">
@@ -163,12 +153,8 @@ function EmptyPortfolio() {
         </h1>
 
         <p className="mt-3 text-slate-600">
-          CareerLM builds
-          your portfolio from
-          completed roadmap
-          milestones. Complete
-          onboarding first to
-          create your roadmap.
+          CareerLM builds your portfolio from completed roadmap milestones.
+          Complete onboarding first to create your roadmap.
         </p>
 
         <Link
@@ -183,6 +169,8 @@ function EmptyPortfolio() {
 }
 
 export default async function PortfolioPage() {
+  await requireAuthenticatedPageUser();
+
   const roadmap =
     await careerDataService
       .getMyRoadmap();

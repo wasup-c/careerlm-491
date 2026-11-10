@@ -4,6 +4,10 @@ import MilestoneCard from "@/components/MilestoneCard";
 import SharedLayout from "@/components/SharedLayout";
 
 import {
+  requireAuthenticatedPageUser,
+} from "@/lib/auth/require-authenticated-page-user";
+
+import {
   getRoadmapProgress,
 } from "@/lib/roadmapProgress";
 
@@ -15,12 +19,14 @@ import {
  * The roadmap is backed by user-specific server-side persistence.
  *
  * Prevent Next.js from treating the page as static build-time content so
- * each request can resolve the current user's latest persisted roadmap.
+ * each request can resolve the authenticated user's latest roadmap.
  */
 export const dynamic =
   "force-dynamic";
 
 export default async function RoadmapPage() {
+  await requireAuthenticatedPageUser();
+
   const roadmap =
     await careerDataService
       .getMyRoadmap();
@@ -57,12 +63,6 @@ export default async function RoadmapPage() {
     );
   }
 
-  /**
-   * Member 4 remains responsible for roadmap progress semantics.
-   *
-   * This page only changes where roadmap data comes from:
-   * persisted current-user state rather than mockRoadmap.
-   */
   const {
     progressPercentage,
   } =
@@ -88,18 +88,23 @@ export default async function RoadmapPage() {
 
           <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
             Your path to{" "}
-            {roadmap.targetRole}
+            {
+              roadmap.targetRole
+            }
           </h1>
 
           <p className="mt-3 text-slate-600">
-            Follow these milestones in order and use each step to
-            build toward your target role.
+            Follow these milestones in order and use each step to build toward
+            your target role.
           </p>
 
           <p className="mt-3 text-sm text-slate-600">
-            Estimated roadmap length:{" "}
+            Estimated roadmap
+            length:{" "}
             <span className="font-semibold text-slate-900">
-              {roadmap.estimatedWeeks}{" "}
+              {
+                roadmap.estimatedWeeks
+              }{" "}
               weeks
             </span>
           </p>
@@ -111,7 +116,10 @@ export default async function RoadmapPage() {
               </span>
 
               <span className="text-slate-600">
-                {progressPercentage}%
+                {
+                  progressPercentage
+                }
+                %
               </span>
             </div>
 
@@ -138,9 +146,13 @@ export default async function RoadmapPage() {
 
         <div className="mt-8 space-y-6">
           {orderedMilestones.map(
-            (milestone) => (
+            (
+              milestone
+            ) => (
               <MilestoneCard
-                key={milestone.id}
+                key={
+                  milestone.id
+                }
                 milestone={
                   milestone
                 }

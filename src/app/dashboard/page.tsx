@@ -1,27 +1,53 @@
 // Dashboard page shell — SCRUM-139 [S3-M2]
 // Reads the current user's saved questionnaire and roadmap through
-// Member 1's CareerDataService (server-side only). Progress uses Member 4's
-// calculation. Profile saves go through a server action that saves the
-// current user's profile (SCRUM-226, CC6.1).
+// CareerDataService. The current user is now resolved from the
+// database-backed authentication session.
 
-import type { Metadata } from "next";
+import type {
+  Metadata,
+} from "next";
+
 import Link from "next/link";
+
 import ProfileSection from "@/components/ProfileSection";
 import ProgressCard from "@/components/ProgressCard";
 import SharedLayout from "@/components/SharedLayout";
-import { saveProfileAction } from "./actions";
-import { loadDashboardData } from "@/lib/dashboardData";
-import { careerDataService } from "@/lib/services";
 
-export const metadata: Metadata = {
-  title: "Dashboard | CareerLM",
-};
+import {
+  requireAuthenticatedPageUser,
+} from "@/lib/auth/require-authenticated-page-user";
 
-// Saved data changes per request, so never prerender this page at build time.
-export const dynamic = "force-dynamic";
+import {
+  loadDashboardData,
+} from "@/lib/dashboardData";
+
+import {
+  careerDataService,
+} from "@/lib/services";
+
+import {
+  saveProfileAction,
+} from "./actions";
+
+export const metadata:
+  Metadata = {
+    title:
+      "Dashboard | CareerLM",
+  };
+
+export const dynamic =
+  "force-dynamic";
 
 export default async function DashboardPage() {
-  const { profile, progress } = await loadDashboardData(careerDataService);
+  await requireAuthenticatedPageUser();
+
+  const {
+    profile,
+    progress,
+  } =
+    await loadDashboardData(
+      careerDataService
+    );
 
   return (
     <SharedLayout>
@@ -29,24 +55,40 @@ export default async function DashboardPage() {
         <h1 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
           Your dashboard
         </h1>
+
         <p className="mt-3 text-slate-600">
           Check your profile and roadmap progress, then pick up where you left
           off.
         </p>
 
         <div className="mt-8 grid gap-6 md:grid-cols-2">
-          <ProfileSection initialProfile={profile} onSave={saveProfileAction} />
+          <ProfileSection
+            initialProfile={
+              profile
+            }
+            onSave={
+              saveProfileAction
+            }
+          />
 
-          <ProgressCard progress={progress} />
+          <ProgressCard
+            progress={
+              progress
+            }
+          />
         </div>
 
-        <nav aria-labelledby="shortcuts-heading" className="mt-8">
+        <nav
+          aria-labelledby="shortcuts-heading"
+          className="mt-8"
+        >
           <h2
             id="shortcuts-heading"
             className="text-lg font-semibold text-slate-900"
           >
             Go to
           </h2>
+
           <ul className="mt-3 flex flex-col gap-3 sm:flex-row">
             <li>
               <Link
@@ -56,6 +98,7 @@ export default async function DashboardPage() {
                 View roadmap
               </Link>
             </li>
+
             <li>
               <Link
                 href="/portfolio"
@@ -70,4 +113,3 @@ export default async function DashboardPage() {
     </SharedLayout>
   );
 }
-
