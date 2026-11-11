@@ -13,11 +13,11 @@ describe("Resume extraction service", () => {
   it("returns valid pasted text", async () => {
     const text = await extractResumeText({
       kind: "text",
-      text: "Jane Doe\nSkills: TypeScript",
+      text: "John Doe\nSkills: Python",
     });
 
-    expect(text).toContain("Jane Doe");
-    expect(text).toContain("TypeScript");
+    expect(text).toContain("John Doe");
+    expect(text).toContain("Python");
   });
 
   it("rejects empty text", async () => {
@@ -35,7 +35,7 @@ describe("Resume extraction service", () => {
     // Create this synthetic PDF fixture first.
     const bytes = await readFile(
       new URL(
-        "./fixtures/sample-resume.pdf",
+        "../fixtures/sample-resume.pdf",
         import.meta.url
       )
     );
@@ -45,8 +45,8 @@ describe("Resume extraction service", () => {
       bytes,
     });
 
-    expect(text).toContain("Jane Doe");
-    expect(text).toContain("TypeScript");
+    expect(text).toContain("John Doe");
+    expect(text).toContain("Python");
   });
 
   it("handles corrupted PDF contents", async () => {
