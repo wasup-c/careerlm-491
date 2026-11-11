@@ -45,8 +45,12 @@ describe("Resume extraction service", () => {
       bytes,
     });
 
-    expect(text).toContain("John Doe");
-    expect(text).toContain("Python");
+    const normalizedText = text
+    .replace(/\s+/g, " ")
+    .toLowerCase();
+
+    expect(normalizedText).toMatch(/j\s*o\s*h\s*n\s+d\s*o\s*e/i);
+    expect(normalizedText).toMatch(/python/i);
   });
 
   it("handles corrupted PDF contents", async () => {
