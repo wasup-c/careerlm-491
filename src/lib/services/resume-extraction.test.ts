@@ -53,14 +53,30 @@ describe("Resume extraction service", () => {
     expect(normalizedText).toMatch(/python/i);
   });
 
-  it("handles corrupted PDF contents", async () => {
-    await expect(
-      extractResumeText({
+  
+  it("RN-09 returns controlled extraction exceptions", async () => {
+    // Arrange: Invalid PDF content simulates a parsing failure.
+    const corruptedPdf = new Uint8Array([1, 2, 3, 4]);
+
+    // Act and Assert: Verify the real extraction service
+    // converts the failure into a controlled error.
+    let caughtError: unknown;
+
+    try {
+      await extractResumeText({
         kind: "pdf",
-        bytes: new Uint8Array([1, 2, 3, 4]),
-      })
-    ).rejects.toBeInstanceOf(
-      ResumeExtractionError
-    );
+        bytes: corruptedPdf,
+      });
+    } catch (error) {
+      caughtError = error;
+    }
+
+    // Assert: Verify the correct custom error class
+    expect(caughtError).toBeInstanceOf(ResumeExtractionError);
+    expect(caughtError).toMatchObject({
+      name: "ResumeExtractionError",
+      code: "EXTRACTION_FAILED",
+      message: "Unable to extract text from the PDF.",
+    });
   });
 });
