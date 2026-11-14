@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import type { ResumeInput } from "./domain";
 import { PersistenceValidationError } from "./errors";
@@ -170,16 +170,5 @@ describe("SCRUM-243: Resume Text Normalization", () => {
 
     // Assert: Re-normalization must not change the result.
     expect(secondResult).toEqual(firstResult);
-  });
-
-  it("RN-09 Verify controlled extraction exceptions", () => {
-    // ARRANGE:
-    // Simulate an internal extraction failure.
-    const extract = vi.fn().mockRejectedValue(
-      new Error("Synthetic internal extractor failure")
-    );
-
-    // Track whether downstream parsing is invoked.
-    const parse = vi.fn();
   });
 });
