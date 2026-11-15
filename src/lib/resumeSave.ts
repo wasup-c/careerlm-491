@@ -10,6 +10,11 @@ import type { ResumeInput } from "@/lib/persistence";
 import type { CareerDataService } from "@/lib/services";
 import { validateResumeText } from "@/lib/resumeLimits";
 
+import {
+  parseResumeText,
+  ResumeNormalizationError,
+} from "@/lib/services/resume-normalization";
+
 export interface SavedResumeSummary {
   text: string;
   characterCount: number;
@@ -62,7 +67,8 @@ export async function saveResumeText(
   };
 
   try {
-    const saved = await service.saveMyResume(input);
+    const parsedInput = parseResumeText(input.normalizedText);
+    const saved = await service.saveMyResume(parsedInput);
 
     return {
       ok: true,
@@ -75,6 +81,13 @@ export async function saveResumeText(
   } catch (error) {
     if (error instanceof AuthenticationRequiredError) {
       return { ok: false, message: SIGNED_OUT_MESSAGE };
+    }
+    if (error instanceof ResumeNormalizationError) {
+      return {
+        ok: false,
+        message: "Error: Your résumé needs attention.",
+        fieldError: error.message,
+      };
     }
 
     return {
