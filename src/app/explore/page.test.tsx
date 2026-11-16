@@ -22,6 +22,8 @@ describe("Navigation page", () => {
       "/dashboard",
       "/roadmap",
       "/portfolio",
+      "/resume",
+      "/jobs",
     ]);
     expect(within(nav).getByRole("link", { name: /take the questionnaire/i })).toBeInTheDocument();
     expect(within(nav).getByRole("link", { name: /dashboard/i })).toBeInTheDocument();
