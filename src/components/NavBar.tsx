@@ -35,6 +35,10 @@ export const NAV_LINKS = [
     href: "/resume",
     label: "Résumé",
   },
+  {
+    href: "/jobs",
+    label: "Jobs",
+  },
 ] as const;
 
 const focusRing =

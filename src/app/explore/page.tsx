@@ -33,6 +33,16 @@ const destinations: Destination[] = [
     title: "Portfolio",
     description: "Review the milestones you've completed and the skills you've built.",
   },
+  {
+    href: "/resume",
+    title: "Résumé",
+    description: "Save your résumé so CareerLM can use it for feedback and matching.",
+  },
+  {
+    href: "/jobs",
+    title: "Jobs",
+    description: "Search current job listings that fit your target role.",
+  },
 ];
 
 /**
