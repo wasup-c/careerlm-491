@@ -178,9 +178,10 @@ export function parseResumeSubmission(
   // Reuse the existing normalization and section parser.
   const parsedResume = parseResumeText(rawText);
 
+
   // Count sections that contain at least one nonempty entry.
-  const populatedSections = Object.values(
-    parsedResume.sections
+  const populatedSections = (
+    Object.values(parsedResume.sections) as string[][]
   ).filter((entries) =>
     entries.some((entry) => entry.trim().length > 0)
   );

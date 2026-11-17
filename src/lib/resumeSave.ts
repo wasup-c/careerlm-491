@@ -6,7 +6,6 @@
 // résumé-processing layer, so sections are saved empty until that exists.
 
 import { AuthenticationRequiredError } from "@/lib/auth";
-import type { ResumeInput } from "@/lib/persistence";
 import type { CareerDataService } from "@/lib/services";
 import { validateResumeText } from "@/lib/resumeLimits";
 
@@ -86,7 +85,7 @@ export async function saveResumeText(
         message: "Your résumé needs attention.",
         fieldError:
           error.code === "MISSING_RESUME_SECTIONS"
-            ? "Include at least one of these sections: Education, Experience, Skills, or Projects."
+            ? "Include at least one populated section: Education, Experience, Skills, or Projects."
             : "Couldn't validate your résumé text. Please review it and try again.",
       };
     }

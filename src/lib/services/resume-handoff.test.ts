@@ -80,20 +80,38 @@ describe("S4-M3-03: resume processing and persistence handoff", () => {
     expect(retrieved?.normalizedText).toBe(COMPLETE_RESUME);
   });
 
-  it("extracts a synthetic PDF and saves its normalized text", async () => {
+  
+  it("extracts and saves a valid structured PDF resume", async () => {
+    // Arrange
     const repository = new InMemoryCareerRepository();
     const service = serviceFor(repository);
-    // Reuses the same fixture as resume-extraction.test.ts.
+
     const bytes = await readFile(
-      new URL("../fixtures/sample-resume.pdf", import.meta.url),
+      new URL(
+        "../fixtures/sample-resume.pdf",
+        import.meta.url
+      )
     );
 
-    const saved = await processAndSaveResume({ kind: "pdf", bytes }, service);
+    // Act
+    const saved = await processAndSaveResume(
+      { kind: "pdf", bytes },
+      service
+    );
 
+    // Assert: Check extracted and parsed content.
     expect(saved.normalizedText).toMatch(/python/i);
+
+    expect(saved.sections.skills).toContain("Python");
+
+    expect(saved.sections.education.length).toBeGreaterThan(0);
+
+    // Assert: Check persistence.
     expect(saved.userId).toBe("test-user");
+
     expect(await service.getMyResume()).toEqual(saved);
   });
+
 
   it("works without any analysis service", async () => {
     const repository = new InMemoryCareerRepository();

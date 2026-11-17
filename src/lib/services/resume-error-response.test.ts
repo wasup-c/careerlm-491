@@ -45,4 +45,39 @@ describe("Resume error response service", () => {
       message: "We couldn't process your resume. Please try again.",
     });
   });
+
+
+  it("returns a controlled error for missing resume sections", () => {
+    const error = new ResumeNormalizationError(
+      "MISSING_RESUME_SECTIONS",
+      "Internal validation details"
+    );
+
+    expect(toResumeErrorResponse(error)).toEqual({
+      ok: false,
+      code: "MISSING_RESUME_SECTIONS",
+      message:
+        "Include at least one populated section: Education, Experience, Skills, or Projects.",
+    });
+  });
+
+  it("returns a safe normalization failure response", () => {
+    const error = new ResumeNormalizationError(
+      "NORMALIZATION_FAILED",
+      "Internal parser failure"
+    );
+
+    const response = toResumeErrorResponse(error);
+
+    expect(response).toEqual({
+      ok: false,
+      code: "NORMALIZATION_FAILED",
+      message:
+        "We couldn't process your resume. Please try again.",
+    });
+
+    expect(response.message).not.toContain(
+      "Internal parser failure"
+    );
+  });
 });

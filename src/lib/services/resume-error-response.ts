@@ -1,3 +1,4 @@
+
 import {
   ResumeExtractionError,
 } from "./resume-extraction";
@@ -7,6 +8,7 @@ import {
 } from "./resume-normalization";
 
 export function toResumeErrorResponse(error: unknown) {
+  // Handle PDF and plain-text extraction errors.
   if (error instanceof ResumeExtractionError) {
     return {
       ok: false as const,
@@ -18,22 +20,40 @@ export function toResumeErrorResponse(error: unknown) {
     };
   }
 
+  // Handle normalization and section-validation errors.
   if (error instanceof ResumeNormalizationError) {
-    if (error.code === "MISSING_RESUME_SECTIONS") {
-      return {
-        ok: false as const,
-        code: error.code,
-        message:
-          "Include at least one populated section: Education, Experience, Skills, or Projects.",
-      };
-    }
+    switch (error.code) {
+      case "MISSING_RESUME_SECTIONS":
+        return {
+          ok: false as const,
+          code: error.code,
+          message:
+            "Include at least one populated section: Education, Experience, Skills, or Projects.",
+        };
 
-  // Keep your existing handling for other errors.
+      case "INVALID_RESUME_TEXT":
+        return {
+          ok: false as const,
+          code: error.code,
+          message:
+            "Your resume contains text that couldn't be processed.",
+        };
+
+      case "NORMALIZATION_FAILED":
+        return {
+          ok: false as const,
+          code: error.code,
+          message:
+            "We couldn't process your resume. Please try again.",
+        };
+    }
   }
 
+  // Never expose unknown internal errors to the client.
   return {
     ok: false as const,
     code: "PROCESSING_FAILED" as const,
-    message: "We couldn't process your resume. Please try again.",
+    message:
+      "We couldn't process your resume. Please try again.",
   };
 }

@@ -62,17 +62,38 @@ describe("saveResumeText", () => {
     expect((await service.getMyResume())?.normalizedText).toBe(RESUME);
   });
 
+  
   it("replaces the previous résumé on a second save", async () => {
-    const service = serviceFor(new InMemoryCareerRepository(), "test-user-a");
-
-    await saveResumeText(service, RESUME);
-    await saveResumeText(
-      service,
-      "Skills\nPython, SQL\nProjects\nUpdated CareerLM App"
+    const service = serviceFor(
+      new InMemoryCareerRepository(),
+      "test-user-a"
     );
 
-    expect((await loadSavedResume(service))?.text).toBe("Updated résumé text");
+    const updatedResume = [
+      "Skills",
+      "Python, SQL",
+      "Projects",
+      "Updated CareerLM App",
+    ].join("\n");
+
+    // Save the original resume.
+    const first = await saveResumeText(service, RESUME);
+    expect(first.ok).toBe(true);
+
+    // Replace with updated resume.
+    const second = await saveResumeText(
+      service,
+      updatedResume
+    );
+
+    expect(second.ok).toBe(true);
+
+    // Verify the replacement was saved.
+    expect(
+      (await loadSavedResume(service))?.text
+    ).toBe(updatedResume);
   });
+
 
   it("returns a field error and saves nothing for empty or oversized text", async () => {
     const service = serviceFor(new InMemoryCareerRepository(), "test-user-a");
@@ -189,18 +210,44 @@ describe("loadSavedResume and deleteSavedResume", () => {
     expect(await loadSavedResume(service)).toBeNull();
   });
 
+  
   it("deletes only the current user's résumé", async () => {
+    // Arrange: Two users share the same repository.
     const repository = new InMemoryCareerRepository();
+
     const userA = serviceFor(repository, "test-user-a");
     const userB = serviceFor(repository, "test-user-b");
-    await saveResumeText(userA, RESUME);
-    await saveResumeText(userB, "User B résumé");
 
-    expect(await deleteSavedResume(userA)).toEqual({ ok: true });
+    const userBResume = [
+      "User B",
+      "Skills",
+      "Python, SQL",
+      "Projects",
+      "User B Career Application",
+    ].join("\n");
 
+    // Save valid resumes for both users.
+    const savedA = await saveResumeText(userA, RESUME);
+    const savedB = await saveResumeText(userB, userBResume);
+
+    // Verify both submissions succeeded.
+    expect(savedA.ok).toBe(true);
+    expect(savedB.ok).toBe(true);
+
+    // Act: Delete only User A's resume.
+    expect(await deleteSavedResume(userA)).toEqual({
+      ok: true,
+    });
+
+    // Assert: User A's resume was deleted.
     expect(await loadSavedResume(userA)).toBeNull();
-    expect((await loadSavedResume(userB))?.text).toBe("User B résumé");
+
+    // Assert: User B's resume remains unchanged.
+    expect(
+      (await loadSavedResume(userB))?.text
+    ).toBe(userBResume);
   });
+
 
   it("returns friendly messages when delete fails", async () => {
     const signedOut = await deleteSavedResume({
