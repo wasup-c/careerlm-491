@@ -203,4 +203,20 @@ describe("S4-M3-03: resume processing and persistence handoff", () => {
     expect(replacement.createdAt).toBe(original.createdAt);
     expect(await service.getMyResume()).toEqual(replacement);
   });
+
+  it("does not save when resume text is unreadable", async () => {
+    const saveMyResume = vi.fn();
+
+    const operation = processAndSaveResume(
+      { kind: "text", text: "   \n\t  " },
+      { saveMyResume },
+    );
+
+    await expect(operation).rejects.toMatchObject({
+      code: "UNREADABLE_RESUME",
+    });
+
+    expect(saveMyResume).not.toHaveBeenCalled();
+  });
+
 });

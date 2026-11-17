@@ -54,6 +54,31 @@ describe("Resume extraction service", () => {
   });
 
   
+  it("valid PDF containing no text returns a controlled error", async () => {
+    // Arrange: Read a valid PDF containing no text.
+    const bytes = await readFile(
+      new URL("../fixtures/empty.pdf", import.meta.url)
+    );
+
+    // Act: Attempt to extract text.
+    const extraction = extractResumeText({
+      kind: "pdf",
+      bytes,
+    });
+
+    // Assert: Verify the controlled error class.
+    await expect(extraction).rejects.toBeInstanceOf(
+      ResumeExtractionError
+    );
+
+    // Assert: Verify the correct error code and message.
+    await expect(extraction).rejects.toMatchObject({
+      code: "UNREADABLE_RESUME",
+      message: "The resume contains no extractable text.",
+    });
+  });
+
+  
   it("RN-09 returns controlled extraction exceptions", async () => {
     // Arrange: Invalid PDF content simulates a parsing failure.
     const corruptedPdf = new Uint8Array([1, 2, 3, 4]);
@@ -80,3 +105,4 @@ describe("Resume extraction service", () => {
     });
   });
 });
+

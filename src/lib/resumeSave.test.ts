@@ -66,7 +66,10 @@ describe("saveResumeText", () => {
     const service = serviceFor(new InMemoryCareerRepository(), "test-user-a");
 
     await saveResumeText(service, RESUME);
-    await saveResumeText(service, "Updated résumé text");
+    await saveResumeText(
+      service,
+      "Skills\nPython, SQL\nProjects\nUpdated CareerLM App"
+    );
 
     expect((await loadSavedResume(service))?.text).toBe("Updated résumé text");
   });
@@ -118,6 +121,64 @@ describe("saveResumeText", () => {
 
     expect(await loadSavedResume(userB)).toBeNull();
     expect((await loadSavedResume(userA))?.text).toBe(RESUME);
+  });
+
+  it("does not save text without resume sections", async () => {
+    // Arrange
+    const service = serviceFor(
+      new InMemoryCareerRepository(),
+      "test-user-a"
+    );
+
+    const saveMyResume = vi.spyOn(service, "saveMyResume");
+
+    const invalidText =
+      "Hello, this is just random text for testing.";
+
+    // Act
+    const result = await saveResumeText(service, invalidText);
+
+    // Assert
+    expect(result).toMatchObject({
+      ok: false,
+      message: "Your résumé needs attention.",
+      fieldError: expect.stringContaining(
+        "at least one populated section"
+      ),
+    });
+
+    // Verify invalid text never reaches persistence.
+    expect(saveMyResume).not.toHaveBeenCalled();
+
+    // Verify no resume was saved.
+    expect(await service.getMyResume()).toBeNull();
+  });
+
+  it("preserves an existing resume when replacement text is invalid", async () => {
+    const service = serviceFor(
+      new InMemoryCareerRepository(),
+      "test-user-a"
+    );
+
+    // Save a valid resume first.
+    const original = await saveResumeText(service, RESUME);
+
+    expect(original.ok).toBe(true);
+
+    const savedBefore = await service.getMyResume();
+
+    // Attempt to replace it with unrelated text.
+    const result = await saveResumeText(
+      service,
+      "This is not a resume."
+    );
+
+    expect(result.ok).toBe(false);
+
+    // Existing saved resume must remain unchanged.
+    expect(await service.getMyResume()).toEqual(
+      savedBefore
+    );
   });
 });
 

@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import { normalizeResume } from "../persistence/validation";
 import {
   parseResumeText,
+  parseResumeSubmission,
   ResumeNormalizationError,
 } from "./resume-normalization";
 
@@ -90,4 +91,70 @@ describe("S4-M3-02: resume normalization and section detection", () => {
       }
     }
   });
+
+  it("rejects text without recognizable resume sections", () => {
+    // Arrange: Input that does not contain resume content.
+    const text =
+      "Hello, I am testing the application. This is random text.";
+
+    // Act and Assert: Reject invalid resume content.
+    expect(() => parseResumeSubmission(text)).toThrow(
+      ResumeNormalizationError
+    );
+
+    expect(() => parseResumeSubmission(text)).toThrowError(
+      expect.objectContaining({
+        code: "MISSING_RESUME_SECTIONS",
+      })
+    );
+  });
+
+  it("rejects a resume containing only empty section headings", () => {
+    const text = [
+      "Education",
+      "Experience",
+      "Skills",
+      "Projects",
+    ].join("\n");
+
+    expect(() => parseResumeSubmission(text)).toThrowError(
+      expect.objectContaining({
+        code: "MISSING_RESUME_SECTIONS",
+      })
+    );
+  });
+
+  it("accepts a resume with at least one populated section", () => {
+    const text = "Skills\nTypeScript, React, SQL";
+
+    const result = parseResumeSubmission(text);
+
+    expect(result.sections).toEqual({
+      education: [],
+      experience: [],
+      skills: ["TypeScript", "React", "SQL"],
+      projects: [],
+    });
+  });
+
+  it("accepts a resume containing all four sections", () => {
+    const text = [
+      "Education",
+      "B.S. Computer Science",
+      "Experience",
+      "Software Engineer",
+      "Skills",
+      "TypeScript, React",
+      "Projects",
+      "CareerLM",
+    ].join("\n");
+
+    const result = parseResumeSubmission(text);
+
+    expect(result.sections.education).toHaveLength(1);
+    expect(result.sections.experience).toHaveLength(1);
+    expect(result.sections.skills).toHaveLength(2);
+    expect(result.sections.projects).toHaveLength(1);
+  });
+
 });
