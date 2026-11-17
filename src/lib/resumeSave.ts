@@ -6,12 +6,11 @@
 // résumé-processing layer, so sections are saved empty until that exists.
 
 import { AuthenticationRequiredError } from "@/lib/auth";
-import type { ResumeInput } from "@/lib/persistence";
 import type { CareerDataService } from "@/lib/services";
 import { validateResumeText } from "@/lib/resumeLimits";
 
 import {
-  parseResumeText,
+  parseResumeSubmission,
   ResumeNormalizationError,
 } from "@/lib/services/resume-normalization";
 
@@ -61,13 +60,11 @@ export async function saveResumeText(
     return { ok: false, message: "Your résumé needs attention.", fieldError };
   }
 
-  const input: ResumeInput = {
-    normalizedText: text,
-    sections: { education: [], experience: [], skills: [], projects: [] },
-  };
+    try {
+    // Parse and validate resume content.
+    const parsedInput = parseResumeSubmission(text);
 
-  try {
-    const parsedInput = parseResumeText(input.normalizedText);
+    // Only save when the required content is present.
     const saved = await service.saveMyResume(parsedInput);
 
     return {
@@ -85,11 +82,13 @@ export async function saveResumeText(
     if (error instanceof ResumeNormalizationError) {
       return {
         ok: false,
-        message: "Error: Your résumé needs attention.",
-        fieldError: error.message,
+        message: "Your résumé needs attention.",
+        fieldError:
+          error.code === "MISSING_RESUME_SECTIONS"
+            ? "Include at least one populated section: Education, Experience, Skills, or Projects."
+            : "Couldn't validate your résumé text. Please review it and try again.",
       };
     }
-
     return {
       ok: false,
       message:

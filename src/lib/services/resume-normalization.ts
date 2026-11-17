@@ -39,7 +39,8 @@ const OTHER_HEADINGS = new Set([
 
 export type ResumeNormalizationErrorCode =
   | "INVALID_RESUME_TEXT"
-  | "NORMALIZATION_FAILED";
+  | "NORMALIZATION_FAILED"
+  | "MISSING_RESUME_SECTIONS";
 
 export class ResumeNormalizationError extends Error {
   constructor(
@@ -161,4 +162,39 @@ export function parseResumeText(rawText: string): ResumeInput {
       "Unable to process the resume text.",
     );
   }
+}
+
+
+/**
+ * Validates that parsed resume content contains at least
+ * one recognized, populated resume section.
+ *
+ * This is an application-level submission requirement,
+ * not a persistence schema requirement.
+ */
+export function parseResumeSubmission(
+  rawText: string
+): ResumeInput {
+  // Reuse the existing normalization and section parser.
+  const parsedResume = parseResumeText(rawText);
+
+
+  // Count sections that contain at least one nonempty entry.
+  const populatedSections = (
+    Object.values(parsedResume.sections) as string[][]
+  ).filter((entries) =>
+    entries.some((entry) => entry.trim().length > 0)
+  );
+
+  const MIN_REQUIRED_SECTIONS = 1;
+
+  // Reject submissions containing no meaningful sections.
+  if (populatedSections.length < MIN_REQUIRED_SECTIONS) {
+    throw new ResumeNormalizationError(
+      "MISSING_RESUME_SECTIONS",
+      "Include at least one populated section: Education, Experience, Skills, or Projects."
+    );
+  }
+
+  return parsedResume;
 }

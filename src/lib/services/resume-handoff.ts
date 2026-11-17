@@ -11,7 +11,7 @@ import {
   type ValidatedResumeSource,
 } from "@/lib/services/resume-extraction";
 
-import { parseResumeText } from "./resume-normalization";
+import { parseResumeSubmission } from "./resume-normalization";
 
 type ResumeSaveService = Pick<
   CareerDataService,
@@ -24,7 +24,7 @@ export async function processAndSaveResume(
 ): Promise<ResumeRecord> {
   // Extract and normalize the validated content.
   const extractedText = await extractResumeText(source);
-  const parsedResume = await parseResumeText(extractedText);
+  const parsedResume = await parseResumeSubmission(extractedText);
 
   // Save using the existing current-user boundary.
   return service.saveMyResume(parsedResume);

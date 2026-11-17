@@ -1,4 +1,3 @@
-
 import { PDFParse } from "pdf-parse";
 
 /**
@@ -32,7 +31,6 @@ export class ResumeExtractionError extends Error {
     this.name = "ResumeExtractionError";
   }
 }
-
 /**
  * Ensures extraction produced readable text.
  */
@@ -64,8 +62,9 @@ async function extractPdfText(
       data: new Uint8Array(bytes),
     });
 
-    const result = await parser.getText();
-
+    const result = await parser.getText({
+      pageJoiner: "",
+    });
     return requireReadableText(result.text);
   } catch (error) {
     if (error instanceof ResumeExtractionError) {
